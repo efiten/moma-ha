@@ -7,7 +7,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  pytest:
+  # Laag 1: transport en protocol. Draait bewust ZONDER Home Assistant
+  # geïnstalleerd, zodat deze job omvalt als er ooit een HA-import in laag 1
+  # sluipt. Zo dwingt CI de grens uit ontwerpbeslissing 2 af in plaats van
+  # discipline.
+  protocol:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,9 +20,21 @@ jobs:
         with:
           python-version: "3.13"
 
-      # De protocollaag gebruikt alleen de standaardbibliotheek; pytest is de
-      # enige ontwikkelafhankelijkheid. Home Assistant is hier bewust niet
-      # nodig -- zie docs/ontwerpbeslissingen.md, beslissing 2.
       - run: pip install pytest pytest-asyncio
 
-      - run: pytest -q
+      - run: pytest -q tests/protocol
+
+  # Laag 2: de Home Assistant-lijm. Aparte job omdat het installeren van Home
+  # Assistant minuten kost en de snelle job daar niet op hoeft te wachten.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - run: pip install pytest pytest-asyncio pytest-homeassistant-custom-component
+
+      - run: pytest -q tests/integration
