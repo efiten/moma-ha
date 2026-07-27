@@ -125,9 +125,30 @@ De laadpaal krijgt geen eigen `name` en geen eigen broadcast: hij levert extra
 velden binnen hetzelfde `state`-bericht.
 
 Gevolg voor het datamodel: **één Home Assistant-device per `name`**, met een
-veldenlijst die over de tijd groeit. Geen hiërarchie van sub-devices, geen
-koppeling tussen apparaten. Dat is aanzienlijk eenvoudiger dan een model met
-meerdere devices per broadcast.
+veldenlijst die over de tijd groeit.
+
+Eén device betekent niet één sensor. Elk veld wordt een eigen entiteit onder
+dat device, allemaal met dezelfde prefix:
+
+```
+Device:  MomaXXXXXX
+├─ sensor.momaxxxxxx_grid_power_w
+├─ sensor.momaxxxxxx_home_power_w
+├─ sensor.momaxxxxxx_pv_power_w
+├─ sensor.momaxxxxxx_battery_power_w
+├─ sensor.momaxxxxxx_battery_soc
+├─ sensor.momaxxxxxx_frequency_hz
+└─ (later) sensor.momaxxxxxx_charger_power_w
+```
+
+Wat hiermee vervalt is het alternatief: de laadpaal als **eigen** device met een
+`via_device`-koppeling naar de Moma, dus twee kaarten met een ouder-kindrelatie.
+Dat zou nodig zijn geweest als de laadpaal een eigen `name` broadcastte. Nu
+hoort alles onder één device, wat aanzienlijk eenvoudiger is.
+
+Twee dingen bepalen welke entiteiten er werkelijk komen: `online` wordt nooit
+een sensor, en een veld verschijnt pas nadat het één keer een waarde had die
+niet nul is (ontwerpbeslissing 13).
 
 Die extra velden zitten nog niet in de huidige firmware. Ze komen binnen op
 `version: 1` en activeren bij hun eerste waarde die niet nul is, dus er is geen
