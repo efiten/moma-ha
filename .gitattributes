@@ -1,0 +1,8 @@
+# Je werkt op Windows en zet dit later voort op een andere machine. Zonder deze
+# regel komen CRLF-regeleindes in de repo terecht en geeft elke platformwissel
+# ruis in de diffs.
+* text=auto eol=lf
+
+# Shellscripts draaien in Alpine-containers (add-on, HA OS) -- CRLF breekt de
+# shebang met een cryptische "not found".
+*.sh text eol=lf

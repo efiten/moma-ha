@@ -1,0 +1,27 @@
+# Ruwe captures bevatten echte huishoudelijke telemetrie (verbruiks- en
+# aanwezigheidspatronen, serienummers). Deze repo wordt later publiek --
+# hier mag niets in terechtkomen dat je history vervuilt.
+captures/
+*.pcap
+*.raw.jsonl
+
+# Kopieën die `python tools/sync_addon.py` neerzet omdat Docker niet buiten
+# zijn buildcontext kan kijken. De bron staat in custom_components/moma/.
+addon/moma-recorder/protocol/
+addon/moma-recorder/moma_record.py
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+# Laag 1 moet testbaar zijn zonder Home Assistant. Door de integratiemap zelf op
+# het pad te zetten importeren tests `protocol.messages` rechtstreeks, zonder
+# `custom_components/moma/__init__.py` aan te raken -- dat bestand importeert
+# straks homeassistant en zou die onafhankelijkheid stukmaken.
+pythonpath = ["custom_components/moma", "."]
+
+filterwarnings = ["error"]

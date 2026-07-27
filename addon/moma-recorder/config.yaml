@@ -1,0 +1,31 @@
+name: Moma Recorder
+version: "0.1.0"
+slug: moma_recorder
+description: >-
+  Neemt moma UDP-broadcasts op als JSONL. Bedoeld voor protocolonderzoek en om
+  testmateriaal op te bouwen voor de moma-integratie.
+url: https://github.com/efiten/moma-ha
+
+arch:
+  - amd64
+  - aarch64
+  - armv7
+
+# Zonder host-netwerk komt subnet-broadcast de container niet binnen.
+host_network: true
+
+# Captures horen in /share, niet in /config: het is data, geen configuratie.
+map:
+  - share:rw
+
+init: false
+
+options:
+  port: 8484
+  output: /share/moma/capture.jsonl
+  report_every: 3600
+
+schema:
+  port: port
+  output: str
+  report_every: int(0,)
