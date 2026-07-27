@@ -32,15 +32,20 @@ class IngestResult:
     outcome: Outcome
     message: MomaMessage | None = None
     reason: str | None = None
+    activated_fields: tuple[str, ...] = ()
+    """Velden die met dít pakket voor het eerst een waarde kregen."""
 
 
 class PacketIngest:
     """Verwerkt datagrammen en houdt bij wat er langskwam."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, activation: FieldActivation | None = None) -> None:
         self._tracker = SequenceTracker()
         self._survey = ProtocolSurvey()
-        self._activation = FieldActivation()
+        # Injecteerbaar zodat een bewaarde activeringsstatus meegegeven kan
+        # worden: na een herstart mogen bestaande sensoren niet opnieuw als
+        # nieuw gemeld worden.
+        self._activation = activation if activation is not None else FieldActivation()
         self._rejected = 0
         self._stale = 0
 
@@ -56,8 +61,11 @@ class PacketIngest:
             return IngestResult(Outcome.STALE, message=message)
 
         self._survey.observe(message)
-        self._activation.observe(message)
-        return IngestResult(Outcome.ACCEPTED, message=message)
+        return IngestResult(
+            Outcome.ACCEPTED,
+            message=message,
+            activated_fields=tuple(self._activation.observe(message)),
+        )
 
     def summary(self) -> dict[str, Any]:
         summary = self._survey.summary()

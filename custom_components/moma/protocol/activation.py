@@ -29,8 +29,17 @@ class FieldActivation:
         *,
         ignored: Iterable[str] = IGNORED_FIELDS,
         active: Mapping[str, Iterable[str]] | None = None,
+        require_value: bool = True,
     ) -> None:
+        """`require_value=False` activeert elk veld bij de eerste keer zien.
+
+        Bedoeld voor een testinstallatie: bij een inactief apparaat staat alles
+        op nul, activeert er niets, en krijg je een device zonder sensoren. Dat
+        lijkt kapot terwijl het correct is. Genegeerde velden blijven ook dan
+        genegeerd.
+        """
         self._ignored = frozenset(ignored)
+        self._require_value = require_value
         self._active: dict[str, set[str]] = {
             device: set(fields) for device, fields in (active or {}).items()
         }
@@ -46,7 +55,9 @@ class FieldActivation:
         newly_activated = [
             name
             for name, value in message.fields.items()
-            if name not in self._ignored and name not in active and self._is_real(value)
+            if name not in self._ignored
+            and name not in active
+            and (not self._require_value or self._is_real(value))
         ]
         active.update(newly_activated)
 

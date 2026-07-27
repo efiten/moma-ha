@@ -106,6 +106,23 @@ def test_a_restored_field_is_not_reported_as_new_again():
     assert restored.observe(message(sequence=2, pv_power_w=800)) == []
 
 
+def test_can_activate_every_field_regardless_of_value():
+    # Nodig voor een testinstallatie: bij een inactief apparaat staat alles op
+    # nul, activeert er niets, en krijg je een device zonder sensoren. Dat lijkt
+    # kapot terwijl het correct is.
+    activation = FieldActivation(require_value=False)
+
+    activated = activation.observe(message(grid_power_w=0, battery_soc=0))
+
+    assert sorted(activated) == ["battery_soc", "grid_power_w"]
+
+
+def test_ignored_fields_stay_ignored_even_when_value_is_not_required():
+    activation = FieldActivation(require_value=False)
+
+    assert activation.observe(message(online=True)) == []
+
+
 def test_ignored_fields_can_be_configured():
     activation = FieldActivation(ignored={"grid_power_w"})
 

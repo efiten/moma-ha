@@ -8,6 +8,7 @@ vertekend bereik per veld als gevolg.
 
 import json
 
+from protocol.activation import FieldActivation
 from protocol.ingest import Outcome, PacketIngest
 
 BASE_TIMESTAMP = 1785154712978
@@ -82,6 +83,27 @@ def test_counts_each_outcome():
     assert summary["packets"] == 2
     assert summary["stale_packets"] == 1
     assert summary["rejected_packets"] == 1
+
+
+def test_reports_which_fields_activated_on_this_packet():
+    # De sensorlaag heeft dit per pakket nodig om precies dan entiteiten aan te
+    # maken, zonder de volledige activeringsstatus te hoeven vergelijken.
+    ingest = PacketIngest()
+
+    result = ingest.handle(packet(sequence=1, grid_power_w=100, battery_soc=0))
+
+    assert result.activated_fields == ("grid_power_w",)
+
+
+def test_accepts_a_restored_activation_state():
+    # Na een herstart van Home Assistant mogen bestaande sensoren niet opnieuw
+    # als nieuw gemeld worden.
+    activation = FieldActivation(active={"TESTDEVICE01": ["pv_power_w"]})
+    ingest = PacketIngest(activation=activation)
+
+    result = ingest.handle(packet(sequence=1, pv_power_w=1200))
+
+    assert result.activated_fields == ()
 
 
 def test_reports_which_fields_would_become_sensors():
