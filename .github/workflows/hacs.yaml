@@ -1,0 +1,23 @@
+name: HACS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # `brands` controleert of het domein in home-assistant/brands staat.
+          # Dat is alleen vereist voor opname in de standaard HACS-lijst, niet
+          # voor installatie als custom repository.
+          ignore: brands

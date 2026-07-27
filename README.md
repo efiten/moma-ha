@@ -31,6 +31,14 @@ met het waargenomen bereik per veld:
 python3 tools/moma_record.py summary /share/moma/capture.jsonl
 ```
 
+## Installeren via HACS
+
+> Nog niet zinvol — de integratie doet nog niets. Dit staat hier zodat de
+> structuur klopt zodra de sensorlaag er is.
+
+HACS → ⋮ → **Custom repositories** → `https://github.com/efiten/moma-ha`,
+categorie **Integration**. Daarna installeren en Home Assistant herstarten.
+
 ## Ontwikkelen
 
 ```sh
@@ -91,3 +99,9 @@ wordt dan mee zichtbaar; er is geen tweede kans om dit recht te zetten.
 ## Documentatie
 
 - [`docs/protocol.md`](docs/protocol.md) — het moma-protocol zoals waargenomen
+- [`docs/ontwerpbeslissingen.md`](docs/ontwerpbeslissingen.md) — de genomen
+  beslissingen, met hun reden
+
+## Licentie
+
+MIT — zie [LICENSE](LICENSE).
