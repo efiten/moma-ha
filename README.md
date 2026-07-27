@@ -41,16 +41,40 @@ categorie **Integration**. Daarna installeren en Home Assistant herstarten.
 
 ## Ontwikkelen
 
+De testsuite is gesplitst langs de laaggrens.
+
+**Laag 1** (`tests/protocol/`) heeft Home Assistant niet nodig en draait overal,
+ook op Windows:
+
 ```sh
 python -m venv .venv
 .venv/Scripts/python -m pip install pytest pytest-asyncio
-.venv/Scripts/python -m pytest
+.venv/Scripts/python -m pytest tests/protocol
 ```
 
-De tests van laag 1 draaien zonder Home Assistant. `pyproject.toml` zet
-`custom_components/moma` op het pad zodat ze `protocol.*` rechtstreeks
-importeren, buiten `custom_components/moma/__init__.py` om — dat bestand gaat
-straks homeassistant importeren en zou die onafhankelijkheid breken.
+`pyproject.toml` zet `custom_components/moma` op het pad zodat deze tests
+`protocol.*` rechtstreeks importeren, buiten `custom_components/moma/__init__.py`
+om — dat bestand importeert homeassistant en zou die onafhankelijkheid breken.
+
+**Laag 2** (`tests/integration/`) heeft Home Assistant nodig, en dat testharnas
+is Unix-only: het importeert `fcntl`. Op Windows draait dit dus via WSL:
+
+```sh
+wsl -- bash scripts/test.sh -q
+```
+
+> Installeer `pytest-homeassistant-custom-component` **niet** in een
+> Windows-venv. pytest laadt die plugin automatisch, waarna zelfs de
+> laag-1-tests omvallen op `fcntl`.
+
+Eenmalig in WSL, omdat Ubuntu `venv` niet standaard meelevert:
+
+```sh
+sudo apt install -y python3.14-venv
+```
+
+CI draait beide lagen als aparte jobs. De laag-1-job installeert Home Assistant
+bewust niet, zodat hij omvalt als er ooit een HA-import in laag 1 sluipt.
 
 ## Doel
 
