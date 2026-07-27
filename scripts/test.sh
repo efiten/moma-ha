@@ -16,8 +16,12 @@ set -euo pipefail
 
 VENV="${MOMA_VENV:-$HOME/venv-moma}"
 
-if [ ! -x "$VENV/bin/python" ]; then
+# Controleren op pytest en niet op bin/python: een half aangemaakte venv heeft
+# de interpreter wel en de pakketten niet, en zou dan stilzwijgend overgeslagen
+# worden.
+if [ ! -x "$VENV/bin/pytest" ]; then
   echo "venv aanmaken in $VENV"
+  rm -rf "$VENV"
   python3 -m venv "$VENV"
   "$VENV/bin/pip" install --quiet --upgrade pip
   "$VENV/bin/pip" install --quiet \
