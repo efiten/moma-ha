@@ -51,6 +51,7 @@ _locate_protocol_package()
 from protocol.ingest import Outcome, PacketIngest  # noqa: E402
 from protocol.listener import DEFAULT_PORT, open_listener  # noqa: E402
 from protocol.recorder import JsonlRecorder, replay  # noqa: E402
+from protocol.watchdog import StallDetector  # noqa: E402
 
 
 def _print_summary(ingest: PacketIngest) -> None:
@@ -87,10 +88,37 @@ def _install_stop_handlers(stop: asyncio.Event) -> None:
             pass
 
 
+async def _watch_for_stalls(detector: StallDetector, timeout: float) -> None:
+    """Waarschuw wanneer de stroom pakketten stilvalt, en wanneer hij terugkomt.
+
+    Zonder dit blijft een doof geworden listener tevreden draaien: er crasht
+    niets, Supervisor herstart niets, en je merkt het pas als je een opname
+    opent die na een uur ophield.
+    """
+    interval = max(1.0, min(5.0, timeout / 4))
+    reported = False
+
+    while True:
+        await asyncio.sleep(interval)
+        now = time.monotonic()
+
+        if detector.is_stalled(now=now):
+            if not reported:
+                reported = True
+                print(
+                    f"[stilstand] al {detector.quiet_for(now=now):.0f}s geen pakket ontvangen",
+                    flush=True,
+                )
+        elif reported:
+            reported = False
+            print("[herstel] pakketten komen weer binnen", flush=True)
+
+
 async def _listen(args: argparse.Namespace) -> int:
     ingest = PacketIngest()
     last_report = time.monotonic()
     stop = asyncio.Event()
+    detector = StallDetector(timeout=args.stall_timeout, now=time.monotonic())
 
     recorder = JsonlRecorder(args.out) if args.out else None
     if recorder is not None:
@@ -98,6 +126,8 @@ async def _listen(args: argparse.Namespace) -> int:
 
     def handle(payload: bytes, source: str) -> None:
         nonlocal last_report
+
+        detector.packet_received(now=time.monotonic())
 
         # Vastleggen voor het interpreteren: de opname moet ook bevatten wat we
         # niet begrijpen, want daarvoor draait hij.
@@ -123,9 +153,17 @@ async def _listen(args: argparse.Namespace) -> int:
         flush=True,
     )
 
+    watchdog = (
+        asyncio.create_task(_watch_for_stalls(detector, args.stall_timeout))
+        if args.stall_timeout
+        else None
+    )
+
     try:
         await stop.wait()
     finally:
+        if watchdog is not None:
+            watchdog.cancel()
         listener.close()
         if recorder is not None:
             recorder.close()
@@ -161,6 +199,16 @@ def main(argv: list[str] | None = None) -> int:
         default=0,
         metavar="SECONDEN",
         help="periodiek een inventaris tonen (0 = alleen bij afsluiten)",
+    )
+    listen.add_argument(
+        "--stall-timeout",
+        type=int,
+        default=60,
+        metavar="SECONDEN",
+        help=(
+            "waarschuwen na zoveel seconden zonder pakket (0 = uit); "
+            "standaard 60, ongeveer twaalf gemiste intervallen"
+        ),
     )
 
     summary = subcommands.add_parser("summary", help="een opname samenvatten")

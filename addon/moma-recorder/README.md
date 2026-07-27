@@ -43,9 +43,17 @@ starten, en **Start on boot** aanzetten.
 | `port` | `8484` | UDP-poort om op te luisteren |
 | `output` | `/share/moma/capture.jsonl` | Pad voor de opname; bestaande opnames worden aangevuld, niet overschreven |
 | `report_every` | `3600` | Interval in seconden voor een inventaris in het log; `0` zet dit uit |
+| `stall_timeout` | `60` | Waarschuwen na zoveel seconden zonder pakket; `0` zet dit uit |
 
 De recorder logt bewust niet elk pakket: bij één broadcast per vijf seconden
 zijn dat 17.000 regels per dag. De periodieke inventaris vat hetzelfde samen.
+
+`stall_timeout` dekt het enige stille faalscenario af. Valt de stroom pakketten
+weg, dan crasht er niets — het proces blijft draaien, Supervisor herstart niets,
+en zonder waarschuwing merk je het pas als je een opname opent die na een uur
+ophield. Bij 60 seconden zijn dat ongeveer twaalf gemiste intervallen, dus
+gewoon pakketverlies veroorzaakt geen valse meldingen. Herstel wordt ook
+gelogd.
 
 ## Wat er in de opname staat
 

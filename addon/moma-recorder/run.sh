@@ -4,6 +4,7 @@ set -e
 PORT="$(bashio::config 'port')"
 OUTPUT="$(bashio::config 'output')"
 REPORT_EVERY="$(bashio::config 'report_every')"
+STALL_TIMEOUT="$(bashio::config 'stall_timeout')"
 
 mkdir -p "$(dirname "${OUTPUT}")"
 
@@ -15,4 +16,5 @@ exec python3 /opt/moma/moma_record.py listen \
   --port "${PORT}" \
   --out "${OUTPUT}" \
   --report-every "${REPORT_EVERY}" \
+  --stall-timeout "${STALL_TIMEOUT}" \
   --quiet

@@ -24,8 +24,10 @@ options:
   port: 8484
   output: /share/moma/capture.jsonl
   report_every: 3600
+  stall_timeout: 60
 
 schema:
   port: port
   output: str
   report_every: int(0,)
+  stall_timeout: int(0,)
