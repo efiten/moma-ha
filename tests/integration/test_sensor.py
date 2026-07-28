@@ -87,6 +87,37 @@ async def test_an_unknown_field_still_becomes_a_sensor(hass, free_port):
     assert hass.states.get("sensor.testdevice01_iets_nieuws").state == "7"
 
 
+async def test_the_display_name_is_readable(hass, free_port):
+    entry = await setup_moma(hass, free_port)
+
+    await feed(hass, entry, make_packet(grid_power_w=2300))
+
+    state = hass.states.get("sensor.testdevice01_grid_power_w")
+    assert state.attributes["friendly_name"] == "TESTDEVICE01 Grid power"
+
+
+async def test_the_entity_id_follows_the_field_even_with_a_nicer_name(hass, free_port):
+    # Home Assistant leidt de entity_id normaal af uit de weergavenaam, wat
+    # `sensor.testdevice01_battery_soc` zou maken van "Battery SOC". Daarom zet
+    # de entiteit zijn entity_id expliciet.
+    entry = await setup_moma(hass, free_port)
+
+    await feed(hass, entry, make_packet(battery_soc=42))
+
+    state = hass.states.get("sensor.testdevice01_battery_soc")
+    assert state is not None
+    assert state.attributes["friendly_name"] == "TESTDEVICE01 Battery SOC"
+
+
+async def test_an_unknown_field_gets_a_readable_name_too(hass, free_port):
+    entry = await setup_moma(hass, free_port)
+
+    await feed(hass, entry, make_packet(charger_power_w=3680))
+
+    state = hass.states.get("sensor.testdevice01_charger_power_w")
+    assert state.attributes["friendly_name"] == "TESTDEVICE01 Charger power"
+
+
 async def test_unique_id_combines_device_and_field(hass, free_port):
     entry = await setup_moma(hass, free_port)
     await feed(hass, entry, make_packet(grid_power_w=2300))

@@ -11,7 +11,7 @@ from homeassistant.components.sensor.const import (
     DEVICE_CLASS_UNITS,
 )
 
-from custom_components.moma.fields import CATALOGUE, describe, unit_token
+from custom_components.moma.fields import CATALOGUE, describe, display_name, unit_token
 
 
 def test_takes_the_last_underscore_token():
@@ -64,6 +64,30 @@ def test_an_unknown_token_still_yields_a_usable_sensor():
     assert spec.device_class is None
     assert spec.unit is None
     assert spec.state_class is SensorStateClass.MEASUREMENT
+
+
+def test_a_unit_token_is_dropped_from_the_display_name():
+    # De eenheid staat al naast de waarde; hem in de naam herhalen is ruis.
+    assert display_name("grid_power_w") == "Grid power"
+
+
+def test_the_display_name_of_a_single_word_field():
+    assert display_name("frequency_hz") == "Frequency"
+
+
+def test_a_semantic_token_is_kept_in_the_display_name():
+    # `soc` is geen eenheid maar betekenis: weglaten zou "Battery" opleveren,
+    # wat niet zegt dat het om de laadtoestand gaat.
+    assert display_name("battery_soc") == "Battery SOC"
+
+
+def test_an_unknown_field_keeps_all_its_words():
+    assert display_name("iets_nieuws") == "Iets nieuws"
+
+
+def test_a_field_that_is_nothing_but_a_unit_token_keeps_its_name():
+    # Anders bleef er niets over om te tonen.
+    assert display_name("w") == "W"
 
 
 def test_every_catalogue_entry_uses_a_unit_home_assistant_accepts():
