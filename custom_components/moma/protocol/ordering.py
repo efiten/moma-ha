@@ -11,6 +11,11 @@ from dataclasses import dataclass
 
 from .messages import MomaMessage
 
+# Hoeveel de teller mag terugvallen voordat we het als een herstart lezen in
+# plaats van als een verlaat pakket. UDP levert pakketten door elkaar met een
+# paar plaatsen verschil; honderden plaatsen terug is geen herordening.
+RESET_THRESHOLD = 10
+
 
 @dataclass
 class _DeviceState:
@@ -48,6 +53,19 @@ class SequenceTracker:
         if message.timestamp > known.timestamp:
             # Teller terug, klok vooruit: herstart. Geen verlies, de reeks
             # begint gewoon opnieuw.
+            known.sequence = message.sequence
+            known.timestamp = message.timestamp
+            return True
+
+        if known.sequence - message.sequence >= RESET_THRESHOLD:
+            # Teller ver terug en de klok ook: een herstart zonder betrouwbare
+            # tijd. Dat gebeurt als het apparaat geen RTC heeft of NTP nog niet
+            # gesynchroniseerd is.
+            #
+            # Zonder deze uitweg zou de tracker elk pakket weigeren tot de teller
+            # weer boven de oude waarde uitkomt. Bij een teller die op 500 stond
+            # en vijf seconden per pakket is dat veertig minuten stilte, zonder
+            # dat er iets in het log verschijnt.
             known.sequence = message.sequence
             known.timestamp = message.timestamp
             return True

@@ -52,7 +52,24 @@ verwerkte voor hetzelfde apparaat wordt verworpen; anders springen
 vermogenswaarden terug en ontstaan zaagtanden in de statistieken. Gaten in de
 reeks zijn meetbaar pakketverlies en worden een diagnostic sensor.
 
-Gedrag bij apparaatherstart is nog onbekend en moet nagevraagd worden.
+Een herstart van het apparaat zet de teller terug naar 1 en is daarmee niet te
+onderscheiden van een verlaat pakket. Er zijn daarom **twee uitwegen**, en beide
+zijn nodig:
+
+1. **Klok vooruit.** Is de `timestamp` juist vooruit gesprongen, dan is het een
+   herstart. Dit is het normale geval.
+2. **Grote terugval van de teller.** Valt de teller met minstens tien plaatsen
+   terug, dan is het ook een herstart — ongeacht de klok.
+
+Die tweede regel dekt een herstart waarbij het apparaat nog geen betrouwbare tijd
+heeft: geen RTC, of NTP nog niet gesynchroniseerd. Dan springt de `timestamp`
+*achteruit* en faalt regel 1. Zonder regel 2 zou de tracker elk pakket weigeren
+tot de teller weer boven de oude waarde uitkomt — bij een teller op 500 en vijf
+seconden per pakket veertig minuten stilte, zonder iets in het log. Precies het
+soort storing dat niemand opmerkt.
+
+De drempel van tien plaatsen scheidt de twee gevallen: UDP levert pakketten door
+elkaar met een paar plaatsen verschil, nooit met honderden.
 
 ## 5. Configuratieloze discovery, `name` als identiteit
 

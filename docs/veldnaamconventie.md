@@ -76,10 +76,24 @@ apparaat inactief is. Ze worden bijgehouden in
 
 **Tekenconventie van de vermogensvelden.** Is `grid_power_w` positief bij afname
 van het net of bij injectie? Laadt de batterij bij positieve of bij negatieve
-`battery_power_w`? Dit moet kloppen voordat de waarden ergens in een
-energieoverzicht terechtkomen.
+`battery_power_w`?
+
+> Aangegeven: injectie krijgt een negatief teken. Nog niet in een opname gezien,
+> dus we houden het als open punt tot het bevestigd is.
+
+De sensoren geven de waarde weer zoals hij binnenkomt, dus voor de weergave
+maakt het niets uit. Het gaat pas meespelen als er ooit afgeleide kWh-tellers
+bij komen, want dan moeten afname en injectie apart geteld worden.
 
 **`sequence` bij een herstart** van het apparaat: begint de teller opnieuw bij 1,
-of loopt hij door? De integratie verwerpt pakketten met een lager
-sequencenummer als verlaat, en gebruikt de `timestamp` om een herstart daarvan te
-onderscheiden. Weten hoe het werkelijk werkt maakt die afweging overbodig.
+of loopt hij door?
+
+> Aangegeven: de teller herstart vrijwel zeker bij 1. Nog niet waargenomen.
+
+Nuttig om te weten voor jullie kant: als de teller herstart, **laat dan bij
+voorkeur ook de klok kloppen** voordat er weer gebroadcast wordt. De integratie
+gebruikt `timestamp` om een herstart te onderscheiden van een verlaat pakket, dat
+verworpen moet worden. Springt de klok achteruit — geen RTC, of NTP nog niet
+gesynchroniseerd — dan valt hij terug op een tweede regel die een grote
+terugval van de teller ook als herstart leest. Dat werkt, maar kost een paar
+pakketten. Een kloppende klok bij het eerste pakket kost er nul.

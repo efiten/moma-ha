@@ -200,9 +200,21 @@ beide bijgewerkt worden.
 1. **Tekenconventie per vermogensveld** — positief bij afname of bij injectie,
    bij laden of bij ontladen? Een `min` die negatief wordt verraadt de richting,
    zodra er echte activiteit is.
+
+   *De ontwikkelaars geven aan dat injectie een negatief teken krijgt. Nog niet
+   in een opname gezien, dus blijft openstaand.* Voor de sensoren maakt het niets
+   uit: die geven de waarde weer zoals hij binnenkomt, positief of negatief.
+   Het gaat pas meespelen bij afgeleide kWh-tellers, en die zijn buiten scope
+   (beslissing 10).
+
 2. **`sequence` bij apparaatherstart** — terug naar 1 of doorlopend? Te
    observeren door het apparaat één keer bewust te herstarten terwijl de
    recorder loopt.
+
+   *De ontwikkelaars geven aan dat de teller vrijwel zeker herstart bij 1. Nog
+   niet waargenomen.* De volgordebewaking gaat daar inmiddels op beide manieren
+   mee om, ook als de klok van het apparaat achteruit springt — zie
+   beslissing 4.
 
 ### Vastgesteld
 

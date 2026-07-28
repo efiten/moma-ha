@@ -75,6 +75,34 @@ def test_accepts_a_sequence_reset_when_the_timestamp_moved_forward():
     assert tracker.accept(message(sequence=1, timestamp=BASE_TIMESTAMP + 60_000)) is True
 
 
+def test_accepts_a_reset_even_when_the_clock_went_backwards():
+    # Het apparaat herstart de teller bij 1. Heeft het geen RTC of is NTP nog
+    # niet gesynchroniseerd, dan springt de timestamp juist achteruit. Zonder
+    # deze uitweg weigert de tracker elk pakket tot de teller weer boven 500
+    # uitkomt -- bij vijf seconden per pakket veertig minuten stilte.
+    tracker = SequenceTracker()
+    tracker.accept(message(sequence=500, timestamp=BASE_TIMESTAMP))
+
+    assert tracker.accept(message(sequence=1, timestamp=0)) is True
+
+
+def test_a_genuinely_late_packet_is_still_rejected():
+    # Een verlaat of dubbel bezorgd pakket scheelt een paar nummers, geen
+    # honderden. Dat onderscheid houdt de bescherming tegen zaagtanden intact.
+    tracker = SequenceTracker()
+    tracker.accept(message(sequence=500, timestamp=BASE_TIMESTAMP))
+
+    assert tracker.accept(message(sequence=498, timestamp=BASE_TIMESTAMP - 10_000)) is False
+
+
+def test_a_clockless_reset_does_not_count_as_loss():
+    tracker = SequenceTracker()
+    tracker.accept(message(sequence=500, timestamp=BASE_TIMESTAMP))
+    tracker.accept(message(sequence=1, timestamp=0))
+
+    assert tracker.lost_for("TESTDEVICE01") == 0
+
+
 def test_counts_packets_lost_in_a_gap():
     tracker = SequenceTracker()
     tracker.accept(message(sequence=1))
