@@ -193,6 +193,9 @@ versie waargenomen en begrepen is.
 ## Openstaande vragen
 
 Nog twee, en beide zijn af te lezen uit een opname in plaats van na te vragen.
+Ze staan ook in [`veldnaamconventie.md`](veldnaamconventie.md), het document dat
+met de ontwikkelaars van het apparaat gedeeld wordt — bij een antwoord moeten
+beide bijgewerkt worden.
 
 1. **Tekenconventie per vermogensveld** — positief bij afname of bij injectie,
    bij laden of bij ontladen? Een `min` die negatief wordt verraadt de richting,

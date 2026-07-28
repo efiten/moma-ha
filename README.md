@@ -154,6 +154,9 @@ wordt dan mee zichtbaar; er is geen tweede kans om dit recht te zetten.
 - [`docs/protocol.md`](docs/protocol.md) — het moma-protocol zoals waargenomen
 - [`docs/ontwerpbeslissingen.md`](docs/ontwerpbeslissingen.md) — de genomen
   beslissingen, met hun reden
+- [`docs/veldnaamconventie.md`](docs/veldnaamconventie.md) — welke veldnamen de
+  integratie automatisch juist weergeeft; bedoeld om te delen met de
+  ontwikkelaars van het apparaat
 
 ## Licentie
 
