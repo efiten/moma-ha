@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Moma",
+        "description": "Moma devices announce themselves by UDP broadcast, so there is nothing to look up: no IP address and no name. Devices appear within one broadcast interval.",
+        "data": {
+          "port": "Port"
+        },
+        "data_description": {
+          "port": "The UDP port the devices broadcast to. Leave this at 8484 unless you know it was changed."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Another Moma entry is already listening on this port."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Moma options",
+        "data": {
+          "show_all_fields": "Show all fields"
+        },
+        "data_description": {
+          "show_all_fields": "Normally a field only becomes a sensor once it reports a value other than zero, so unused hardware does not clutter your system. Switch this on to create sensors for every field immediately - useful while testing against an idle device."
+        }
+      }
+    }
+  }
+}

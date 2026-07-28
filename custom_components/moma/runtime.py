@@ -1,0 +1,171 @@
+"""De runtime: één socket per config entry, gedeeld door alle apparaten erop.
+
+Bezit de UDP-listener, de toestand per apparaat en de stilstandsdetectie. Alles
+wat hierboven zit -- sensoren, diagnostics -- leest hier alleen uit.
+
+Deze module is de enige plek waar de protocollaag en Home Assistant elkaar
+raken.
+"""
+
+from __future__ import annotations
+
+import logging
+import time
+from collections import deque
+from datetime import timedelta
+from typing import Any
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_PORT
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.storage import Store
+
+from .const import (
+    CONF_SHOW_ALL_FIELDS,
+    DOMAIN,
+    MAX_DIAGNOSTIC_PAYLOADS,
+    SIGNAL_DEVICE_UPDATE,
+    SIGNAL_NEW_FIELDS,
+    STALL_CHECK_INTERVAL,
+    STALL_TIMEOUT,
+    STORAGE_VERSION,
+)
+from .protocol.activation import FieldActivation
+from .protocol.devices import DeviceTracker
+from .protocol.listener import MomaListener, open_listener
+from .protocol.watchdog import StallDetector
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class MomaRuntime:
+    """Houdt de listener en de apparaattoestand voor één config entry."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        self.hass = hass
+        self.entry = entry
+        self.port: int = entry.data[CONF_PORT]
+        self.tracker = DeviceTracker()
+
+        self._store: Store[dict[str, Any]] = Store(
+            hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
+        )
+        self._listener: MomaListener | None = None
+        self._detector = StallDetector(timeout=STALL_TIMEOUT, now=time.monotonic())
+        self._recent: deque[dict[str, Any]] = deque(maxlen=MAX_DIAGNOSTIC_PAYLOADS)
+        self._unsub_stall_check: Any = None
+        self._was_stalled = False
+
+    @property
+    def show_all_fields(self) -> bool:
+        return bool(self.entry.options.get(CONF_SHOW_ALL_FIELDS, False))
+
+    async def async_start(self) -> None:
+        """Herstel de activeringsstatus en open de socket."""
+        stored = await self._store.async_load() or {}
+
+        # Zonder herstel zou een herstart 's nachts de PV-sensor laten
+        # verdwijnen tot zonsopgang: het veld staat dan op nul en zou opnieuw
+        # als niet-geactiveerd gelden (ontwerpbeslissing 13).
+        show_all = self.show_all_fields
+        self.tracker = DeviceTracker(
+            show_all_fields=show_all,
+            activation=FieldActivation(
+                active=stored.get("active", {}),
+                require_value=not show_all,
+            ),
+        )
+
+        self._listener = await open_listener(on_packet=self.handle_packet, port=self.port)
+        self._unsub_stall_check = async_track_time_interval(
+            self.hass,
+            self._async_check_stall,
+            timedelta(seconds=STALL_CHECK_INTERVAL),
+        )
+
+    async def async_stop(self) -> None:
+        """Sluit de socket en bewaar de activeringsstatus.
+
+        De socket moet hier werkelijk vrijkomen: blijft hij open, dan faalt de
+        volgende reload met EADDRINUSE, en SO_REUSEPORT verdoezelt dat deels.
+        """
+        if self._unsub_stall_check is not None:
+            self._unsub_stall_check()
+            self._unsub_stall_check = None
+
+        if self._listener is not None:
+            self._listener.close()
+            self._listener = None
+
+        await self._store.async_save({"active": self.tracker.activation_state()})
+
+    @callback
+    def handle_packet(self, payload: bytes, source: str) -> None:
+        """Verwerk één datagram. Wordt door de listener in de event loop geroepen."""
+        self._detector.packet_received(now=time.monotonic())
+
+        # Vastleggen voor diagnostics gebeurt voor het interpreteren, zodat ook
+        # onbegrepen verkeer terugkomt in een rapport.
+        self._recent.append(
+            {"source": source, "payload": payload.decode("utf-8", errors="replace")}
+        )
+
+        update = self.tracker.handle(payload)
+        if update is None:
+            return
+
+        if update.activated_fields:
+            _LOGGER.debug(
+                "Nieuwe velden voor %s: %s", update.device, ", ".join(update.activated_fields)
+            )
+            async_dispatcher_send(self.hass, f"{SIGNAL_NEW_FIELDS}_{self.entry.entry_id}")
+            self._store.async_delay_save(
+                lambda: {"active": self.tracker.activation_state()}, 5
+            )
+
+        async_dispatcher_send(
+            self.hass, f"{SIGNAL_DEVICE_UPDATE}_{self.entry.entry_id}_{update.device}"
+        )
+
+    @property
+    def available(self) -> bool:
+        """Of er recent nog pakketten binnenkwamen."""
+        return not self._detector.is_stalled(now=time.monotonic())
+
+    @property
+    def active_entities(self) -> list[tuple[str, str]]:
+        """Alle (apparaat, veld)-paren die een entiteit horen te hebben."""
+        return [
+            (device, field)
+            for device, fields in self.tracker.activation_state().items()
+            for field in fields
+        ]
+
+    @property
+    def recent_payloads(self) -> list[dict[str, Any]]:
+        return list(self._recent)
+
+    @callback
+    def _async_check_stall(self, _now: Any) -> None:
+        """Werk de beschikbaarheid bij wanneer de stroom stilvalt of terugkomt.
+
+        UDP meldt niet dat een bron verdwenen is. Zonder deze controle blijven
+        entiteiten hun laatste waarde tonen alsof er niets aan de hand is.
+        """
+        stalled = not self.available
+        if stalled == self._was_stalled:
+            return
+
+        self._was_stalled = stalled
+        if stalled:
+            _LOGGER.warning(
+                "Geen moma-pakketten meer op poort %s; entiteiten worden onbeschikbaar",
+                self.port,
+            )
+
+        for device in self.tracker.devices:
+            async_dispatcher_send(
+                self.hass, f"{SIGNAL_DEVICE_UPDATE}_{self.entry.entry_id}_{device}"
+            )

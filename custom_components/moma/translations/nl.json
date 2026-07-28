@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Moma",
+        "description": "Moma-apparaten melden zich via UDP-broadcast, dus er is niets op te zoeken: geen IP-adres en geen naam. Apparaten verschijnen binnen één broadcast-interval.",
+        "data": {
+          "port": "Poort"
+        },
+        "data_description": {
+          "port": "De UDP-poort waar de apparaten naartoe broadcasten. Laat dit op 8484 staan tenzij je weet dat het gewijzigd is."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Een andere Moma-invoer luistert al op deze poort."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Moma-opties",
+        "data": {
+          "show_all_fields": "Alle velden tonen"
+        },
+        "data_description": {
+          "show_all_fields": "Normaal wordt een veld pas een sensor zodra het een waarde anders dan nul meldt, zodat ongebruikte hardware je systeem niet vervuilt. Zet dit aan om meteen voor elk veld een sensor te maken — nuttig bij testen tegen een inactief apparaat."
+        }
+      }
+    }
+  }
+}
