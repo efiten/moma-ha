@@ -9,7 +9,13 @@ laadpaal.
 > apparaat: de tekenconventie van de vermogensvelden is onbekend zolang alles op
 > nul staat.
 
-## Nu al bruikbaar: de recorder
+## De recorder
+
+> **Niet nodig om de integratie te gebruiken.** Dit is een ontwikkelharnas voor
+> protocolonderzoek. In normaal gebruik ontvangt de integratie de broadcast zelf,
+> en levert de knop **Download diagnostics** op de device-pagina de laatste ruwe
+> payloads met het serienummer geredigeerd. Laat de recorder niet permanent
+> meelopen: hij claimt dezelfde poort als de integratie.
 
 Het apparaat is pas na 1 augustus 2026 volledig actief. Tot dan verzamelt de
 recorder wat er langskomt, zodat het datamodel op echte data gebaseerd wordt in
