@@ -140,23 +140,41 @@ alleen te valideren tegen een opgenomen echte laadsessie.
 komt volledig uit de broadcast en is daarmee stabiel over herinstallaties,
 hernoemingen en IP-wisselingen heen.
 
-De `entity_id` volgt diezelfde vorm: `sensor.momaxxxxxx_grid_power_w` — Home
-Assistant maakt entity_ids altijd in kleinletters, en leidt ze af van de
-apparaatnaam plus de entiteitsnaam, dus
-dit vereist dat de entiteitsnaam letterlijk het veld is. Gevolg: in de UI staat
-"MomaXXXXXX grid_power_w" en niet "Grid power". Beide tegelijk kan niet — een
-nettere weergavenaam verandert de entity_id mee.
+De `entity_id` volgt diezelfde vorm: `sensor.momaxxxxxx_grid_power_w`, in
+kleinletters.
 
-De afweging valt uit op voorspelbaarheid. Dit is een monitoring-integratie;
-gebruikers schrijven er templates, automatiseringen en dashboards tegenaan, en
-dan is een entity_id die exact het protocolveld volgt meer waard dan een mooi
-label.
+Home Assistant leidt de entity_id normaal af uit de apparaatnaam plus de
+weergavenaam. Dat zou het eenheidstoken laten wegvallen zodra de weergavenaam
+"Grid power" is. Een entiteit mag zijn entity_id echter **zelf voorstellen** door
+`self.entity_id` te zetten; `entity_platform.py` zegt dat letterlijk:
+
+> `# An entity may suggest the entity_id by setting entity_id itself`
+
+Daarmee zijn beide mogelijk: de weergavenaam is "Grid power" en de entity_id
+blijft `sensor.momaxxxxxx_grid_power_w`. Een eerdere versie van deze beslissing
+stelde dat je moest kiezen; dat was onjuist.
+
+Waarom de entity_id het veld letterlijk volgt: dit is een monitoring-integratie.
+Gebruikers schrijven er templates, automatiseringen en dashboards tegenaan, en
+dan is een entity_id die exact overeenkomt met wat er in de JSON staat meer waard
+dan een mooie afkorting.
+
+Bestaat de entiteit al in het register, dan wint het register. Hernoemen door de
+gebruiker blijft dus werken — met de bekende keerzijde dat het patroon dan
+doorbroken wordt.
 
 ## 12. Eenheden afleiden uit het laatste naamtoken
 
 De catalogus koppelt het laatste underscore-token van een veldnaam aan een
 eenheid en `device_class`: `_w` → watt, `_hz` → hertz, `_soc` → procent,
 enzovoort. `grid_power_w` levert `w`, `battery_soc` levert `soc`.
+
+Datzelfde token bepaalt ook de weergavenaam. Een **eenheidstoken** valt weg,
+want de eenheid staat al naast de waarde: `grid_power_w` wordt "Grid power". Een
+**semantisch token** blijft staan, want het draagt betekenis: `battery_soc`
+zonder `soc` zou "Battery" opleveren, en dat zegt niet dat het om de laadtoestand
+gaat. Bij een onbekend token blijven alle woorden staan — dan weten we niet of
+het laatste deel een eenheid is of betekenis.
 
 Een veld zonder herkenbaar token, zoals `online`, valt terug op zijn
 waardetype en wordt een `binary_sensor`.

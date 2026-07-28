@@ -37,6 +37,13 @@ class FieldSpec:
     unit: str | None = None
     device_class: SensorDeviceClass | None = None
     state_class: SensorStateClass | None = SensorStateClass.MEASUREMENT
+    token_label: str | None = None
+    """Hoe het naamtoken terugkomt in de weergavenaam; None laat het weg.
+
+    Eenheidstokens vallen weg omdat de eenheid al naast de waarde staat.
+    Semantische tokens blijven: `battery_soc` zonder `soc` wordt "Battery", en
+    dat zegt niet dat het om de laadtoestand gaat.
+    """
 
 
 CATALOGUE: dict[str, FieldSpec] = {
@@ -46,7 +53,7 @@ CATALOGUE: dict[str, FieldSpec] = {
     "v": FieldSpec(UnitOfElectricPotential.VOLT, SensorDeviceClass.VOLTAGE),
     "a": FieldSpec(UnitOfElectricCurrent.AMPERE, SensorDeviceClass.CURRENT),
     "hz": FieldSpec(UnitOfFrequency.HERTZ, SensorDeviceClass.FREQUENCY),
-    "soc": FieldSpec(PERCENTAGE, SensorDeviceClass.BATTERY),
+    "soc": FieldSpec(PERCENTAGE, SensorDeviceClass.BATTERY, token_label="SOC"),
     "c": FieldSpec(UnitOfTemperature.CELSIUS, SensorDeviceClass.TEMPERATURE),
     # Percentages zonder batterijbetekenis: eenheid wel, device_class niet.
     "pct": FieldSpec(PERCENTAGE),
@@ -87,3 +94,30 @@ def unit_token(field_name: str) -> str:
 def describe(field_name: str) -> FieldSpec:
     """Zoek de sensoreigenschappen voor een veldnaam."""
     return CATALOGUE.get(unit_token(field_name), UNKNOWN_FIELD)
+
+
+def display_name(field_name: str) -> str:
+    """Een leesbare naam voor de gebruikersinterface.
+
+    De entity_id blijft het protocolveld letterlijk volgen; dit is alleen wat
+    iemand ziet staan. `grid_power_w` wordt "Grid power", `battery_soc` wordt
+    "Battery SOC", en een veld met een onbekend token houdt al zijn woorden --
+    dan weten we niet of het laatste deel een eenheid is of betekenis.
+    """
+    token = unit_token(field_name)
+    spec = CATALOGUE.get(token)
+
+    if spec is None:
+        words = field_name.split("_")
+    else:
+        words = field_name.split("_")[:-1]
+        if spec.token_label:
+            words.append(spec.token_label)
+
+    if not words:
+        # Het veld bestond uitsluitend uit een token; er is niets anders.
+        return field_name.upper()
+
+    label = " ".join(words)
+
+    return label[0].upper() + label[1:]
