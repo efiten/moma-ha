@@ -1,0 +1,29 @@
+name: release
+
+# HACS leest het versienummer uit manifest.json, niet uit de git-tag. Lopen die
+# uiteen, dan toont HACS een andere versie dan er geïnstalleerd wordt -- een
+# fout die je pas merkt als een gebruiker een bug rapporteert op code die hij
+# niet heeft. Deze controle maakt dat onmogelijk.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  verify-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag moet overeenkomen met manifest.json
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest=$(python3 -c "import json; print(json.load(open('custom_components/moma/manifest.json'))['version'])")
+
+          if [ "$tag" != "$manifest" ]; then
+            echo "::error::git-tag is '$tag' maar manifest.json zegt '$manifest'"
+            exit 1
+          fi
+
+          echo "tag en manifest zijn beide $manifest"

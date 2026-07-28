@@ -4,9 +4,10 @@ Home Assistant-integratie voor apparaten die het **moma**-protocol via UDP
 broadcasten — energiedata (vermogen, SOC, frequentie) van onder meer een
 laadpaal.
 
-> **Status.** De protocollaag en de recorder werken. De Home
-> Assistant-integratie zelf (config flow, entities) is nog niet gebouwd —
-> daarvoor wachten we op een opname van een actief apparaat.
+> **Status: bruikbaar om te testen.** De integratie installeert, ontdekt
+> apparaten en maakt sensoren aan. Nog niet gevalideerd tegen een actief
+> apparaat: de tekenconventie van de vermogensvelden is onbekend zolang alles op
+> nul staat.
 
 ## Nu al bruikbaar: de recorder
 
@@ -33,11 +34,33 @@ python3 tools/moma_record.py summary /share/moma/capture.jsonl
 
 ## Installeren via HACS
 
-> Nog niet zinvol — de integratie doet nog niets. Dit staat hier zodat de
-> structuur klopt zodra de sensorlaag er is.
-
 HACS → ⋮ → **Custom repositories** → `https://github.com/efiten/moma-ha`,
-categorie **Integration**. Daarna installeren en Home Assistant herstarten.
+categorie **Integration**. Installeren, Home Assistant herstarten, dan
+Settings → Devices & Services → **Add integration** → *Moma*.
+
+De poort staat voorgevuld op 8484. Er is niets anders te configureren: de
+apparaatidentiteit komt uit de broadcast, dus geen IP-adres en geen naam.
+Apparaten verschijnen binnen één interval — ongeveer vijf seconden.
+
+### Zet "alle velden tonen" aan tijdens het testen
+
+Normaal wordt een veld pas een sensor zodra het één keer een waarde anders dan
+nul meldt. Bij een inactief apparaat staat alles op nul, en dan krijg je een
+device **zonder sensoren** — dat lijkt kapot terwijl het correct is.
+
+Zet daarom bij een testinstallatie de optie **Alle velden tonen** aan
+(Devices & Services → Moma → Configure). Zodra het apparaat echt draait kan die
+weer uit; sensoren die al bestaan verdwijnen niet.
+
+### Versies
+
+Er zijn bewust nog **geen releases**. HACS volgt dan de `main`-branch, zodat een
+`git push` direct beschikbaar is. Zodra er één release bestaat biedt HACS die
+aan en moet je expliciet *main* kiezen om nieuwere code te krijgen — tijdens
+ontwikkelen is dat een valkuil.
+
+Het versienummer in `custom_components/moma/manifest.json` is wat HACS toont. Een
+release-workflow weigert een release waarvan de git-tag daarvan afwijkt.
 
 ## Ontwikkelen
 
