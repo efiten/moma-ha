@@ -9,4 +9,11 @@ asyncio_default_fixture_loop_scope = "function"
 # straks homeassistant en zou die onafhankelijkheid stukmaken.
 pythonpath = ["custom_components/moma", "."]
 
-filterwarnings = ["error"]
+# Waarschuwingen uit eigen code zijn fouten. Deprecations van Home Assistant en
+# zijn afhankelijkheden niet: die zouden de suite laten omvallen op werk dat niet
+# van ons is.
+filterwarnings = [
+  "error",
+  "ignore::DeprecationWarning",
+  "ignore::PendingDeprecationWarning",
+]

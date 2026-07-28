@@ -24,6 +24,17 @@ def auto_enable_custom_integrations(enable_custom_integrations):
     yield
 
 
+@pytest.fixture(autouse=True)
+def allow_sockets(socket_enabled):
+    """Sta echte sockets toe.
+
+    De HA-testplugin blokkeert die standaard, met goede reden: een test die het
+    netwerk op gaat is traag en onbetrouwbaar. Hier is de UDP-listener juist het
+    onderwerp, en alles blijft op de loopback.
+    """
+    yield
+
+
 @pytest.fixture
 def free_port() -> int:
     """Een vrije UDP-poort, zodat tests elkaar niet in de weg zitten."""
