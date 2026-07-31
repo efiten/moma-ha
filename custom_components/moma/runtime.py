@@ -59,7 +59,6 @@ class MomaRuntime:
         self._recent: deque[dict[str, Any]] = deque(maxlen=MAX_DIAGNOSTIC_PAYLOADS)
         self._unsub_periodic_check: Any = None
         self._was_stalled = False
-        self._zero_issue_open = False
 
     @property
     def show_all_fields(self) -> bool:
@@ -168,6 +167,13 @@ class MomaRuntime:
 
         Alleen bij `show_all_fields` uit: staat die aan, dan bestaan de
         entiteiten wel en valt er niets te melden.
+
+        Of de melding openstaat wordt in het register opgezocht en niet
+        onthouden. Een reload of herstart maakt een nieuwe runtime, en een
+        onthouden vlag staat dan weer op "niets open" terwijl de melding er nog
+        wel is -- die zou dan nooit meer ingetrokken worden. En juist het advies
+        in de melding zelf, "Alle velden tonen" aanzetten, veroorzaakt een
+        reload.
         """
         issue_id = f"{ISSUE_ALL_FIELDS_ZERO}_{self.entry.entry_id}"
         stil = (
@@ -175,11 +181,10 @@ class MomaRuntime:
             and not self.active_entities
             and not self.show_all_fields
         )
+        staat_open = ir.async_get(self.hass).async_get_issue(DOMAIN, issue_id) is not None
 
-        if stil == self._zero_issue_open:
+        if stil == staat_open:
             return
-
-        self._zero_issue_open = stil
 
         if not stil:
             ir.async_delete_issue(self.hass, DOMAIN, issue_id)

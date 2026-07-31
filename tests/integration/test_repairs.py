@@ -12,7 +12,11 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from custom_components.moma.const import DOMAIN, ISSUE_ALL_FIELDS_ZERO
+from custom_components.moma.const import (
+    CONF_SHOW_ALL_FIELDS,
+    DOMAIN,
+    ISSUE_ALL_FIELDS_ZERO,
+)
 
 from .conftest import feed, make_packet, setup_moma
 
@@ -76,6 +80,26 @@ async def test_stays_quiet_when_all_fields_are_shown(hass, free_port):
     await tik(hass)
 
     registry = ir.async_get(hass)
+
+    assert registry.async_get_issue(DOMAIN, issue_id(entry)) is None
+
+
+async def test_withdraws_the_report_after_the_advised_option_change(hass, free_port):
+    # De melding raadt aan "Alle velden tonen" aan te zetten, en dat veroorzaakt
+    # een reload. Zou de runtime onthouden of de melding openstaat in plaats van
+    # dat op te zoeken, dan begint de nieuwe runtime op "niets open" terwijl de
+    # melding er nog is -- en dan blijft die waarschuwing eeuwig staan, juist bij
+    # de gebruiker die het advies opvolgde.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(**ALLE_VELDEN_NUL))
+    await tik(hass)
+    registry = ir.async_get(hass)
+    assert registry.async_get_issue(DOMAIN, issue_id(entry)) is not None
+
+    hass.config_entries.async_update_entry(entry, options={CONF_SHOW_ALL_FIELDS: True})
+    await hass.async_block_till_done()
+    await feed(hass, entry, make_packet(sequence=2, **ALLE_VELDEN_NUL))
+    await tik(hass)
 
     assert registry.async_get_issue(DOMAIN, issue_id(entry)) is None
 
