@@ -29,6 +29,10 @@ STALL_CHECK_INTERVAL = 15.0
 # seconden zou onbegrensd bewaren geheugen blijven opeten.
 MAX_DIAGNOSTIC_PAYLOADS = 20
 
+# Melding voor het geval dat de integratie werkt maar er niets te zien is: alle
+# velden staan op nul, dus er activeert er geen een en er komt zelfs geen device.
+ISSUE_ALL_FIELDS_ZERO = "all_fields_zero"
+
 SIGNAL_NEW_FIELDS = f"{DOMAIN}_new_fields"
 SIGNAL_DEVICE_UPDATE = f"{DOMAIN}_device_update"
 
