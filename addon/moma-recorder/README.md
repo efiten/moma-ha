@@ -9,9 +9,10 @@ ontwikkelharnas dat je met de hand op de Home Assistant-machine zet.
 ## Waarom een add-on en niet een script in de SSH-terminal
 
 Een script in de *Advanced SSH & Web Terminal*-add-on is dood na de eerste
-herstart of update van die add-on, en `apk add python3` is dan ook weg. Als
-lokale add-on beheert Supervisor het proces: starten bij boot, herstarten na
-een crash, logs in de Home Assistant-UI.
+herstart of update van die add-on, en alles wat je daar met `apk add`
+bijgeïnstalleerd hebt is dan ook weg. Als lokale add-on beheert Supervisor het
+proces: starten bij boot, herstarten na een crash, logs in de Home
+Assistant-UI.
 
 Zelf een container starten met `docker run` zou ook werken, maar markeert je
 Home Assistant OS-installatie als *unsupported*.
