@@ -28,5 +28,11 @@
         }
       }
     }
+  },
+  "issues": {
+    "all_fields_zero": {
+      "title": "Moma-apparaat stuurt alleen nullen",
+      "description": "Er komen pakketten binnen van {devices} op poort {port}, dus de verbinding is in orde. Maar elk veld staat op nul, en een veld wordt pas een sensor zodra het één keer een waarde anders dan nul meldt. Daarom heeft deze integratie op dit moment geen enkele entiteit en zelfs geen apparaat.\n\nDat is normaal voor hardware die wel geïnstalleerd is maar nog niet in gebruik. Het lost zichzelf op zodra het apparaat gaat meten.\n\nWil je de velden nu al zien, zet dan **Alle velden tonen** aan bij de opties van de integratie. Sensoren die zo ontstaan verdwijnen niet als je die optie later weer uitzet."
+    }
   }
 }

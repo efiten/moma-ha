@@ -12,8 +12,9 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import issue_registry as ir
 
-from .const import DOMAIN, PLATFORMS
+from .const import DOMAIN, ISSUE_ALL_FIELDS_ZERO, PLATFORMS
 from .runtime import MomaRuntime
 
 type MomaConfigEntry = ConfigEntry[MomaRuntime]
@@ -49,6 +50,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: MomaConfigEntry) -> boo
         await entry.runtime_data.async_stop()
 
     return unloaded
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: MomaConfigEntry) -> None:
+    """Ruim de nul-melding op als de integratie verwijderd wordt.
+
+    Meldingen in het reparatieregister overleven het verwijderen van de invoer.
+    Zonder dit blijft er een waarschuwing staan over een integratie die niet
+    meer bestaat, en dan is er ook niets meer dat hem kan intrekken.
+    """
+    ir.async_delete_issue(hass, DOMAIN, f"{ISSUE_ALL_FIELDS_ZERO}_{entry.entry_id}")
 
 
 async def _async_reload_on_options_change(

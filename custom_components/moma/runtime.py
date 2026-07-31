@@ -18,6 +18,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PORT
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
@@ -25,6 +26,7 @@ from homeassistant.helpers.storage import Store
 from .const import (
     CONF_SHOW_ALL_FIELDS,
     DOMAIN,
+    ISSUE_ALL_FIELDS_ZERO,
     MAX_DIAGNOSTIC_PAYLOADS,
     SIGNAL_DEVICE_UPDATE,
     SIGNAL_NEW_FIELDS,
@@ -55,8 +57,9 @@ class MomaRuntime:
         self._listener: MomaListener | None = None
         self._detector = StallDetector(timeout=STALL_TIMEOUT, now=time.monotonic())
         self._recent: deque[dict[str, Any]] = deque(maxlen=MAX_DIAGNOSTIC_PAYLOADS)
-        self._unsub_stall_check: Any = None
+        self._unsub_periodic_check: Any = None
         self._was_stalled = False
+        self._zero_issue_open = False
 
     @property
     def show_all_fields(self) -> bool:
@@ -79,9 +82,9 @@ class MomaRuntime:
         )
 
         self._listener = await open_listener(on_packet=self.handle_packet, port=self.port)
-        self._unsub_stall_check = async_track_time_interval(
+        self._unsub_periodic_check = async_track_time_interval(
             self.hass,
-            self._async_check_stall,
+            self._async_periodic_check,
             timedelta(seconds=STALL_CHECK_INTERVAL),
         )
 
@@ -91,9 +94,9 @@ class MomaRuntime:
         De socket moet hier werkelijk vrijkomen: blijft hij open, dan faalt de
         volgende reload met EADDRINUSE, en SO_REUSEPORT verdoezelt dat deels.
         """
-        if self._unsub_stall_check is not None:
-            self._unsub_stall_check()
-            self._unsub_stall_check = None
+        if self._unsub_periodic_check is not None:
+            self._unsub_periodic_check()
+            self._unsub_periodic_check = None
 
         if self._listener is not None:
             self._listener.close()
@@ -148,7 +151,55 @@ class MomaRuntime:
         return list(self._recent)
 
     @callback
-    def _async_check_stall(self, _now: Any) -> None:
+    def _async_periodic_check(self, _now: Any) -> None:
+        """De enige terugkerende taak: beschikbaarheid en de nul-melding."""
+        self._async_update_availability()
+        self._async_update_zero_issue()
+
+    @callback
+    def _async_update_zero_issue(self) -> None:
+        """Meld het geval waarin alles binnenkomt maar niets een sensor wordt.
+
+        Een apparaat waarvan elk veld op nul staat activeert geen enkel veld, en
+        zonder entiteiten komt er ook geen device. De integratie werkt dan
+        volledig correct terwijl er in de interface letterlijk niets staat -- niet
+        te onderscheiden van een kapotte installatie. Zonder deze melding is de
+        enige aanwijzing een alinea in de documentatie.
+
+        Alleen bij `show_all_fields` uit: staat die aan, dan bestaan de
+        entiteiten wel en valt er niets te melden.
+        """
+        issue_id = f"{ISSUE_ALL_FIELDS_ZERO}_{self.entry.entry_id}"
+        stil = (
+            bool(self.tracker.devices)
+            and not self.active_entities
+            and not self.show_all_fields
+        )
+
+        if stil == self._zero_issue_open:
+            return
+
+        self._zero_issue_open = stil
+
+        if not stil:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            return
+
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue_id,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=ISSUE_ALL_FIELDS_ZERO,
+            translation_placeholders={
+                "devices": ", ".join(sorted(self.tracker.devices)),
+                "port": str(self.port),
+            },
+        )
+
+    @callback
+    def _async_update_availability(self) -> None:
         """Werk de beschikbaarheid bij wanneer de stroom stilvalt of terugkomt.
 
         UDP meldt niet dat een bron verdwenen is. Zonder deze controle blijven
