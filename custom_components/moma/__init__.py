@@ -63,12 +63,20 @@ async def async_remove_config_entry_device(
     poort 8484 verscheen, zou anders voor altijd als kaart blijven staan zonder
     enige manier om het kwijt te raken.
 
-    Een apparaat dat wél broadcastet weigeren we. Het staat binnen vijf seconden
-    weer in het register, en dan lijkt de verwijderknop stuk. Alleen wat sinds
-    het opstarten geen pakket meer stuurde is werkelijk weg.
+    Een apparaat dat nog broadcastet weigeren we. Het staat binnen vijf seconden
+    weer in het register, en dan lijkt de verwijderknop stuk. De maatstaf is
+    dezelfde stiltedrempel die de entiteiten onbeschikbaar maakt: wat de
+    gebruiker als weg ziet, mag ook weg.
 
     De activeringsstatus gaat mee: bleef die staan, dan komen de sensoren bij een
     eventuele terugkomst meteen terug in plaats van pas na een echte meting.
+
+    Daarna volgt een reload. De sensorlaag houdt in het geheugen bij welke
+    (apparaat, veld)-paren al een entiteit hebben, en die set weet niets van een
+    verwijderd device. Zonder reload slaat hij het paar over zodra het apparaat
+    terugkomt -- geen sensoren, en geen enkele melding waarom. Een reload gooit
+    alle toestand in het geheugen weg en is daarmee ook meteen bestand tegen
+    caches die later nog bijkomen.
     """
     runtime = entry.runtime_data
     namen = {
@@ -77,11 +85,13 @@ async def async_remove_config_entry_device(
         if domein == DOMAIN
     }
 
-    if namen & set(runtime.tracker.devices):
+    if not all(runtime.is_silent(naam) for naam in namen):
         return False
 
     for naam in namen:
         await runtime.async_forget_device(naam)
+
+    hass.config_entries.async_schedule_reload(entry.entry_id)
 
     return True
 
