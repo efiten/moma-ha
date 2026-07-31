@@ -21,8 +21,8 @@ Het apparaat is pas na 1 augustus 2026 volledig actief. Tot dan verzamelt de
 recorder wat er langskomt, zodat het datamodel op echte data gebaseerd wordt in
 plaats van op een capture waarin alles op nul stond.
 
-Snel meekijken vanaf de Home Assistant-host (*Advanced SSH & Web
-Terminal*-add-on, `apk add python3`):
+Snel meekijken vanaf de Home Assistant-host, via de *Advanced SSH & Web
+Terminal*-add-on (die heeft `python3` al aan boord):
 
 ```sh
 python3 tools/moma_record.py listen --out /share/moma/capture.jsonl
@@ -67,6 +67,46 @@ ontwikkelen is dat een valkuil.
 
 Het versienummer in `custom_components/moma/manifest.json` is wat HACS toont. Een
 release-workflow weigert een release waarvan de git-tag daarvan afwijkt.
+
+### Het icoon
+
+Home Assistant haalt merklogo's uit
+[`home-assistant/brands`](https://github.com/home-assistant/brands), niet uit de
+integratie. Zolang `moma` daar niet in staat toont de integratiepagina een grijs
+vakje, en daar is met een bestand in deze repo niets aan te doen. De
+afbeeldingen staan klaar in [`brands/`](brands/README.md).
+
+## Problemen opsporen
+
+**Er is geen logbestand meer.** Op Home Assistant OS schrijft Core sinds 2026
+geen `/config/home-assistant.log`; alles gaat naar journald. Lees mee via
+*Settings → System → Logs*, of via de Supervisor.
+
+Uitgebreide logging aanzetten zonder herstart — *Developer tools → Actions*:
+
+```yaml
+action: logger.set_level
+data:
+  custom_components.moma: debug
+```
+
+Permanent, in `configuration.yaml`:
+
+```yaml
+logger:
+  logs:
+    custom_components.moma: debug
+```
+
+**Waarschuwingen en fouten** verschijnen ook zonder debug-niveau in het
+systeemlogboek. Blijft het daar stil terwijl er niets gebeurt, dan komt er
+waarschijnlijk niets binnen op de poort.
+
+**Wat de integratie werkelijk ontvangen heeft** staat in de
+knop *Download diagnostics* op de integratiepagina: een samenvatting per veld
+met het waargenomen bereik, de tellers voor verworpen, verlate en verloren
+pakketten, en de laatste ruwe payloads. Serienummer en bronadres zijn
+geredigeerd, dus dat bestand kan in een issue.
 
 ## Ontwikkelen
 

@@ -113,11 +113,18 @@ Voorbeeld (geanonimiseerd — `name` vervangen):
 | `battery_power_w` | W | idem |
 | `battery_soc` | % (0–100) | `device_class: battery`, `state_class: measurement` |
 | `frequency_hz` | Hz | `device_class: frequency`, `state_class: measurement` |
-| `online` | bool | `binary_sensor`, `device_class: connectivity` |
+| `online` | bool | **geen entiteit** — zie hieronder |
 
 Tijdens de capture stonden **alle numerieke waarden op 0**. Het apparaat was
 inactief. Dat betekent dat de mapping hierboven op veldnamen berust en nog niet
 tegen echte meetwaarden gevalideerd is.
+
+`online` krijgt bewust geen entiteit. Het veld staat op `true` in elk pakket dat
+we ooit gezien hebben, dus het onderscheidt niets: een apparaat dat `false` zou
+willen melden, zou dat pakket ook moeten kunnen versturen. Beschikbaarheid
+bepalen we daarom aan de hand van de vraag of er nog pakketten binnenkomen
+(ontwerpbeslissing 4), en niet uit een veld in de payload. Zie
+`IGNORED_FIELDS` in `protocol/activation.py`.
 
 ### Eén apparaat, groeiend aantal velden
 
@@ -258,20 +265,33 @@ device-model één apparaat met veel sensoren is, of meerdere apparaten.
 
 ## Capture reproduceren
 
-Op de Home Assistant-host, via de *Advanced SSH & Web Terminal*-add-on met
-protection mode uit (host-netwerk vereist):
+Op de Home Assistant-host, via de *Advanced SSH & Web Terminal*-add-on.
+
+> **`tcpdump` werkt daar niet**, ook niet met protection mode uit. De add-on
+> krijgt `NET_ADMIN`, `SYS_ADMIN`, `SYS_RAWIO`, `SYS_TIME` en `SYS_NICE`, maar
+> **geen `NET_RAW`** — en zonder die capability kan geen enkel programma een
+> packet socket openen. Het commando faalt met *"You don't have permission to
+> perform this capture on that device"*. Geverifieerd op HAOS 17.3 met
+> add-on v24.0.1.
+
+Een gewone UDP-socket heeft die capability niet nodig en ziet precies hetzelfde:
 
 ```sh
-apk add tcpdump
-tcpdump -i enp1s0 -n -A udp port 8484 -c 20
+python3 - <<'EOF'
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+s.bind(("0.0.0.0", 8484))
+while True:
+    data, addr = s.recvfrom(65535)
+    print(addr, data.decode("utf-8", "replace"))
+EOF
 ```
 
-Langer meeschrijven, alleen de JSON:
-
-```sh
-tcpdump -i enp1s0 -n -l -A udp port 8484 2>/dev/null \
-  | grep -o '{.*}' | tee /share/moma/capture.log
-```
+`SO_REUSEPORT` zorgt dat dit naast een draaiende integratie kan: bij broadcast
+krijgt elke socket zijn eigen kopie, dus je snoept niets af. Voor opnemen naar
+een bestand gebruik je liever de recorder, die dit al doet plus samenvatten.
 
 Welke berichttypes zijn langsgekomen:
 

@@ -193,8 +193,10 @@ zonder `soc` zou "Battery" opleveren, en dat zegt niet dat het om de laadtoestan
 gaat. Bij een onbekend token blijven alle woorden staan — dan weten we niet of
 het laatste deel een eenheid is of betekenis.
 
-Een veld zonder herkenbaar token, zoals `online`, valt terug op zijn
-waardetype en wordt een `binary_sensor`.
+Een veld met een onbekend token wordt gewoon een sensor, alleen zonder eenheid
+en zonder `device_class`. Zo valt nieuwe firmware nooit stil op een naam die wij
+niet kennen. Uitzondering is `online`: dat veld staat op de negeerlijst en krijgt
+helemaal geen entiteit (zie beslissing 13).
 
 Deze regel is de reden dat de hybride aanpak uit beslissing 6 werkt zonder
 release: firmware die een nieuw veld `charger_power_w` gaat sturen, krijgt
