@@ -4,10 +4,15 @@ Home Assistant-integratie voor apparaten die het **moma**-protocol via UDP
 broadcasten — energiedata (vermogen, SOC, frequentie) van onder meer een
 laadpaal.
 
-> **Status: bruikbaar om te testen.** De integratie installeert, ontdekt
-> apparaten en maakt sensoren aan. Nog niet gevalideerd tegen een actief
-> apparaat: de tekenconventie van de vermogensvelden is onbekend zolang alles op
-> nul staat.
+> **Status: werkend, getest tegen een actief apparaat.** Installatie via HACS,
+> apparaatontdekking, sensoren, beschikbaarheid en herstart-persistentie zijn op
+> een echte Home Assistant OS-installatie nagelopen. De tekenconventie van de
+> vermogensvelden is bekend: negatief is injectie op het net en ontladen van de
+> batterij, positief is verbruik en laden.
+>
+> Nog niet uitgezocht: koppeling met het Energy dashboard. Het apparaat stuurt
+> geen kWh-tellers, dus daarvoor moeten waarden afgeleid worden — zie
+> [`docs/protocol.md`](docs/protocol.md).
 
 ## De recorder
 
