@@ -2,9 +2,9 @@
 
 Home Assistant-integratie voor apparaten die het **moma**-protocol via UDP
 broadcasten — energiedata (vermogen, SOC, frequentie) van onder meer een
-laadpaal. De moma is een product van **Smart-E-Grid**.
+laadpaal. De MoMa is een product van **Smart-E-Grid**.
 
-De integratie heet *Smart-E-Grid Moma* in de interface. Het domein blijft
+De integratie heet *Smart-E-Grid MoMa* in de interface. Het domein blijft
 `moma`: dat zit in elke `entity_id` en `unique_id`, en wijzigen zou bij bestaande
 installaties de opgebouwde historie afbreken.
 
@@ -51,7 +51,7 @@ python3 tools/moma_record.py summary /share/moma/capture.jsonl
 
 HACS → ⋮ → **Custom repositories** → `https://github.com/efiten/moma-ha`,
 categorie **Integration**. Installeren, Home Assistant herstarten, dan
-Settings → Devices & Services → **Add integration** → *Smart-E-Grid Moma*.
+Settings → Devices & Services → **Add integration** → *Smart-E-Grid MoMa*.
 
 De poort staat voorgevuld op 8484. Er is niets anders te configureren: de
 apparaatidentiteit komt uit de broadcast, dus geen IP-adres en geen naam.
@@ -64,7 +64,7 @@ nul meldt. Bij een inactief apparaat staat alles op nul, en dan krijg je een
 device **zonder sensoren** — dat lijkt kapot terwijl het correct is.
 
 Zet daarom bij een testinstallatie de optie **Alle velden tonen** aan
-(Devices & Services → Smart-E-Grid Moma → Configure). Zodra het apparaat echt
+(Devices & Services → Smart-E-Grid MoMa → Configure). Zodra het apparaat echt
 draait kan die weer uit; sensoren die al bestaan verdwijnen niet.
 
 ### Versies

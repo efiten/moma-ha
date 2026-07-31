@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Smart-E-Grid Moma",
+        "title": "Smart-E-Grid MoMa",
         "description": "Moma devices announce themselves by UDP broadcast, so there is nothing to look up: no IP address and no name. Devices appear within one broadcast interval.",
         "data": {
           "port": "Port"
@@ -18,14 +18,14 @@
   },
   "issues": {
     "all_fields_zero": {
-      "title": "Smart-E-Grid Moma device reports only zeroes",
+      "title": "Smart-E-Grid MoMa device reports only zeroes",
       "description": "Packets from {devices} are arriving on port {port}, so the connection is fine. But every field reads zero, and a field only becomes a sensor once it has reported a value other than zero. That is why this integration currently has no entities and no device at all.\n\nThis is normal for hardware that is installed but not yet in use. It resolves by itself as soon as the device starts measuring.\n\nTo see the fields right away anyway, turn on **Show all fields** under the integration options. Sensors created that way do not disappear when you switch it off again."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Smart-E-Grid Moma options",
+        "title": "Smart-E-Grid MoMa options",
         "data": {
           "show_all_fields": "Show all fields"
         },

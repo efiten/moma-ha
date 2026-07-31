@@ -62,10 +62,15 @@ Dit is geen door de gebruiker instelbare naam maar een fabrieksidentiteit.
 Gevolgen:
 
 - `name` is bruikbaar als `unique_id`, stabiel over herstarts en IP-wisselingen.
-- Serienummer hoort in `DeviceInfo.serial_number`, `Moma` in `model` en
-  `Smart-E-Grid` in `manufacturer` — de moma is een product van Smart-E-Grid.
-  Let op dat `model` daarmee twee rollen heeft: het is óók het voorvoegsel waar
-  het serienummer achter weggehaald wordt.
+- Serienummer hoort in `DeviceInfo.serial_number`, `MoMa` in `model` en
+  `Smart-E-Grid` in `manufacturer` — de MoMa is een product van Smart-E-Grid.
+- **De schrijfwijze op de lijn en de schrijfwijze voor de gebruiker verschillen.**
+  Het apparaat broadcast `Moma001539`; de fabrikant schrijft het product als
+  `MoMa`. De weergavenaam wordt daarom omgezet naar `MoMa001539`, maar de
+  identiteit — `identifiers` en `unique_id` — houdt exact wat er over de lijn
+  kwam. Zie `NAME_PREFIX` en `MODEL` in `const.py`; die staan bewust los van
+  elkaar, want ze door elkaar halen levert een tweede device op en laat alle
+  entiteiten hun historie kwijtraken.
 - Omdat de identiteit uit de broadcast zelf komt, is de integratie
   **configuratieloos**: geen IP-adres, geen handmatige naamgeving. Apparaten
   verschijnen binnen één interval na installatie.
