@@ -23,7 +23,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
 from . import MomaConfigEntry
-from .const import DOMAIN, MANUFACTURER, MODEL, SIGNAL_DEVICE_UPDATE, SIGNAL_NEW_FIELDS
+from .const import SIGNAL_DEVICE_UPDATE, SIGNAL_NEW_FIELDS
+from .device import device_details
 from .fields import describe, display_name
 from .runtime import MomaRuntime
 
@@ -86,13 +87,7 @@ class MomaSensor(SensorEntity):
         self._attr_native_unit_of_measurement = spec.unit
         self._attr_device_class = spec.device_class
         self._attr_state_class = spec.state_class
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device)},
-            name=device,
-            manufacturer=MANUFACTURER,
-            model=MODEL,
-            serial_number=device.removeprefix(MODEL) or None,
-        )
+        self._attr_device_info = DeviceInfo(**device_details(device))
 
     @property
     def native_value(self) -> Any:
