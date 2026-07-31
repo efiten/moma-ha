@@ -6,11 +6,13 @@ integratiepagina in dat geval helemaal leeg -- van buiten niet te onderscheiden
 van een broadcast die nooit aankwam.
 """
 
+import time
+
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.moma import async_remove_config_entry_device
-from custom_components.moma.const import DOMAIN
+from custom_components.moma.const import DOMAIN, STALL_TIMEOUT
 from custom_components.moma.device import device_details
 
 from .conftest import feed, make_packet, setup_moma
@@ -125,3 +127,53 @@ async def test_removing_a_device_forgets_its_activated_fields(hass, free_port):
     await async_remove_config_entry_device(hass, entry, device)
 
     assert entry.runtime_data.tracker.activation_state() == {}
+
+
+async def test_a_device_that_just_sent_a_packet_is_not_silent(hass, free_port):
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="Moma005000", grid_power_w=2300))
+
+    assert entry.runtime_data.is_silent("Moma005000") is False
+
+
+async def test_a_device_becomes_silent_after_the_stall_timeout(hass, free_port):
+    # Dezelfde drempel die de entiteiten onbeschikbaar maakt. Zonder deze regel
+    # was verwijderen pas na een herstart mogelijk, want elk apparaat dat sinds
+    # het opstarten ooit iets stuurde gold als levend.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="Moma005000", grid_power_w=2300))
+
+    later = time.monotonic() + STALL_TIMEOUT + 1
+
+    assert entry.runtime_data.is_silent("Moma005000", now=later) is True
+
+
+async def test_an_unseen_device_counts_as_silent(hass, free_port):
+    # Het geval na een herstart: het device staat nog in het register uit een
+    # eerdere sessie maar heeft nog geen pakket gestuurd.
+    entry = await setup_moma(hass, free_port)
+
+    assert entry.runtime_data.is_silent("Moma005000") is True
+
+
+async def test_a_returning_device_gets_its_sensors_back(hass, free_port):
+    # De sensorlaag houdt in het geheugen bij welke paren al een entiteit hebben.
+    # Zonder reload na het verwijderen slaat hij het paar over zodra het apparaat
+    # terugkomt: geen sensoren, en geen enkele melding waarom.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="Moma005000", grid_power_w=2300))
+    assert hass.states.get("sensor.moma005000_grid_power_w") is not None
+
+    # Verwijderen zoals de interface het doet: eerst de integratie vragen, dan de
+    # config entry van het device losmaken.
+    registry = dr.async_get(hass)
+    device = registry.async_get_device(identifiers={(DOMAIN, "Moma005000")})
+    await entry.runtime_data.async_forget_device("Moma005000")
+    assert await async_remove_config_entry_device(hass, entry, device) is True
+    registry.async_update_device(device.id, remove_config_entry_id=entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.moma005000_grid_power_w") is None
+
+    await feed(hass, entry, make_packet(sequence=2, name="Moma005000", grid_power_w=2300))
+
+    assert hass.states.get("sensor.moma005000_grid_power_w") is not None

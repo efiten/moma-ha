@@ -61,6 +61,9 @@ class MomaRuntime:
         self._recent: deque[dict[str, Any]] = deque(maxlen=MAX_DIAGNOSTIC_PAYLOADS)
         self._unsub_periodic_check: Any = None
         self._was_stalled = False
+        # Per apparaat het moment van het laatste pakket. De StallDetector kijkt
+        # naar de stroom als geheel; hier is de vraag of één apparaat nog meldt.
+        self._last_seen: dict[str, float] = {}
 
     @property
     def show_all_fields(self) -> bool:
@@ -113,7 +116,25 @@ class MomaRuntime:
         een herstart binnen het uitstelvenster.
         """
         self.tracker.forget(device)
+        self._last_seen.pop(device, None)
         await self._store.async_save({"active": self.tracker.activation_state()})
+
+    def is_silent(self, device: str, *, now: float | None = None) -> bool:
+        """Of dit apparaat lang genoeg niets gestuurd heeft om weg te mogen.
+
+        Dezelfde drempel als de beschikbaarheid: is een apparaat stil genoeg om
+        zijn entiteiten onbeschikbaar te maken, dan is het ook stil genoeg om te
+        verwijderen. Zo sluit wat de gebruiker ziet aan bij wat mag.
+
+        Een apparaat dat nooit gezien is geldt als stil. Dat is het geval na een
+        herstart: het device staat nog in het register uit een eerdere sessie,
+        maar heeft nog geen pakket gestuurd.
+        """
+        laatst = self._last_seen.get(device)
+        if laatst is None:
+            return True
+
+        return (time.monotonic() if now is None else now) - laatst > STALL_TIMEOUT
 
     @callback
     def handle_packet(self, payload: bytes, source: str) -> None:
@@ -129,6 +150,8 @@ class MomaRuntime:
         update = self.tracker.handle(payload)
         if update is None:
             return
+
+        self._last_seen[update.device] = time.monotonic()
 
         if update.is_new_device:
             self._async_register_device(update.device)
