@@ -199,22 +199,12 @@ versie waargenomen en begrepen is.
 
 ## Openstaande vragen
 
-Nog twee, en beide zijn af te lezen uit een opname in plaats van na te vragen.
-Ze staan ook in [`veldnaamconventie.md`](veldnaamconventie.md), het document dat
+Nog één, en die is af te lezen uit een opname in plaats van na te vragen. Hij
+staat ook in [`veldnaamconventie.md`](veldnaamconventie.md), het document dat
 met de ontwikkelaars van het apparaat gedeeld wordt — bij een antwoord moeten
 beide bijgewerkt worden.
 
-1. **Tekenconventie per vermogensveld** — positief bij afname of bij injectie,
-   bij laden of bij ontladen? Een `min` die negatief wordt verraadt de richting,
-   zodra er echte activiteit is.
-
-   *De ontwikkelaars geven aan dat injectie een negatief teken krijgt. Nog niet
-   in een opname gezien, dus blijft openstaand.* Voor de sensoren maakt het niets
-   uit: die geven de waarde weer zoals hij binnenkomt, positief of negatief.
-   Het gaat pas meespelen bij afgeleide kWh-tellers, en die zijn buiten scope
-   (beslissing 10).
-
-2. **`sequence` bij apparaatherstart** — terug naar 1 of doorlopend? Te
+1. **`sequence` bij apparaatherstart** — terug naar 1 of doorlopend? Te
    observeren door het apparaat één keer bewust te herstarten terwijl de
    recorder loopt.
 
@@ -225,6 +215,18 @@ beide bijgewerkt worden.
 
 ### Vastgesteld
 
+- **Tekenconventie van de vermogensvelden**, opgegeven door de ontwikkelaars van
+  het apparaat:
+
+  | Veld | Negatief | Positief |
+  |---|---|---|
+  | `grid_power_w` | injectie op het net | verbruik van het net |
+  | `battery_power_w` | ontladen | laden |
+
+  Voor de sensoren verandert dit niets: die geven de waarde weer zoals hij
+  binnenkomt. Het gaat meespelen zodra er kWh-tellers uit afgeleid worden, want
+  het Energy dashboard wil verbruik en injectie als aparte reeksen — en dan
+  bepaalt het teken in welke van de twee een meting terechtkomt.
 - **`state` is voorlopig het enige berichttype.** "Voorlopig" is hier het
   operatieve woord: de parser weigert onbekende types daarom niet, hij laat ze
   door zonder ze te interpreteren. Zo legt de recorder een nieuw type vast in
@@ -248,10 +250,10 @@ watt-sensoren leggen (werkt, maar met een broadcast om de 5 s en pakketverlies
 loopt dat weg), of hopen dat het apparaat totalen in een ander berichttype
 stuurt. Zolang we alleen `state` gezien hebben, is dit onbeslist.
 
-**Tekenconventie onbekend.** Is `grid_power_w` positief bij afname of bij
-injectie? Laadt de batterij bij positieve of negatieve `battery_power_w`? Niet
-af te leiden uit een capture waarin alles 0 is. Het Energy dashboard vereist
-import en export als aparte sensoren, dus dit moet kloppen.
+**De tekenconventie is bekend** — zie [Vastgesteld](#vastgesteld) hierboven.
+Negatief is injectie op het net en ontladen van de batterij; positief is verbruik
+en laden. Dat is precies wat het Energy dashboard nodig heeft om verbruik en
+injectie te scheiden, mócht er ooit een kWh-teller uit afgeleid worden.
 
 **Welke andere `type`-waarden bestaan er?** Het veld impliceert meerdere
 soorten. Alleen een langere capture — het liefst tijdens een echte laadsessie —

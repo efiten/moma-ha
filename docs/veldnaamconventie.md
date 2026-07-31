@@ -68,22 +68,28 @@ kan zijn veranderd, is geen data beter dan verkeerde data in iemands
 energiegrafieken. Verhoog de versie dus alleen bij een echte
 betekeniswijziging — dan weten wij dat we moeten kijken voor we hem ondersteunen.
 
+## Tekenconventie
+
+Opgegeven door de ontwikkelaars van het apparaat:
+
+| Veld | Negatief | Positief |
+|---|---|---|
+| `grid_power_w` | injectie op het net | verbruik van het net |
+| `battery_power_w` | ontladen | laden |
+
+Voor de weergave verandert dit niets — de sensoren geven de waarde weer zoals hij
+binnenkomt. Het gaat meespelen als er ooit kWh-tellers uit afgeleid worden, want
+dan moeten verbruik en injectie apart geteld worden.
+
+Verwachting bij nieuwe velden: **dezelfde regel**, positief is vermogen dat het
+veld in gaat. Een `charger_power_w` van een laadpaal is dus positief tijdens het
+laden van een auto.
+
 ## Wat we nog niet weten
 
-Dit zijn de twee dingen die we niet uit een opname kunnen aflezen zolang het
-apparaat inactief is. Ze worden bijgehouden in
+Nog één ding, en dat is niet uit een opname af te lezen zolang het apparaat niet
+herstart. Het wordt bijgehouden in
 [`protocol.md`](protocol.md#openstaande-vragen).
-
-**Tekenconventie van de vermogensvelden.** Is `grid_power_w` positief bij afname
-van het net of bij injectie? Laadt de batterij bij positieve of bij negatieve
-`battery_power_w`?
-
-> Aangegeven: injectie krijgt een negatief teken. Nog niet in een opname gezien,
-> dus we houden het als open punt tot het bevestigd is.
-
-De sensoren geven de waarde weer zoals hij binnenkomt, dus voor de weergave
-maakt het niets uit. Het gaat pas meespelen als er ooit afgeleide kWh-tellers
-bij komen, want dan moeten afname en injectie apart geteld worden.
 
 **`sequence` bij een herstart** van het apparaat: begint de teller opnieuw bij 1,
 of loopt hij door?
