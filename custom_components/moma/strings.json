@@ -16,6 +16,12 @@
       "already_configured": "Another Moma entry is already listening on this port."
     }
   },
+  "issues": {
+    "all_fields_zero": {
+      "title": "Moma device reports only zeroes",
+      "description": "Packets from {devices} are arriving on port {port}, so the connection is fine. But every field reads zero, and a field only becomes a sensor once it has reported a value other than zero. That is why this integration currently has no entities and no device at all.\n\nThis is normal for hardware that is installed but not yet in use. It resolves by itself as soon as the device starts measuring.\n\nTo see the fields right away anyway, turn on **Show all fields** under the integration options. Sensors created that way do not disappear when you switch it off again."
+    }
+  },
   "options": {
     "step": {
       "init": {
