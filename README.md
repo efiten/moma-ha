@@ -1,5 +1,7 @@
 # MoMa voor Home Assistant
 
+**Nederlands** · [English](README.en.md)
+
 [![HACS: custom repository](https://img.shields.io/badge/HACS-custom%20repository-41BDF5.svg)](https://hacs.xyz)
 [![Home Assistant 2025.1+](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-41BDF5.svg)](https://www.home-assistant.io)
 [![Licentie: MIT](https://img.shields.io/badge/licentie-MIT-blue.svg)](LICENSE)
