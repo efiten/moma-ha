@@ -75,11 +75,20 @@ release-workflow weigert een release waarvan de git-tag daarvan afwijkt.
 
 ### Het icoon
 
-Home Assistant haalt merklogo's uit
-[`home-assistant/brands`](https://github.com/home-assistant/brands), niet uit de
-integratie. Zolang `moma` daar niet in staat toont de integratiepagina een grijs
-vakje, en daar is met een bestand in deze repo niets aan te doen. De
-afbeeldingen staan klaar in [`brands/`](brands/README.md).
+De integratie levert zijn eigen icoon mee, in
+`custom_components/moma/brand/`. Sinds **Home Assistant 2026.3** hebben lokale
+merkafbeeldingen voorrang op de [brands-CDN](https://brands.home-assistant.io);
+Home Assistant biedt ze aan op `/api/brands/integration/moma/icon.png`.
+
+Twee bestanden volstaan: `icon.png` (256×256) en `icon@2x.png` (512×512). Er is
+bewust géén `logo.png` — ontbreekt die, dan serveert Home Assistant het icoon,
+en de zwarte merknaam zou op een donker thema onleesbaar worden.
+
+Op Home Assistant ouder dan 2026.3 werkt dit niet en blijft de integratiepagina
+een grijs vakje tonen. Daarvoor zou een PR naar
+[`home-assistant/brands`](https://github.com/home-assistant/brands) nodig zijn,
+waar de map `custom_integrations/` voor bestaat — inmiddels als legacy aangemerkt,
+juist omdat deze route hem vervangt.
 
 ## Problemen opsporen
 
