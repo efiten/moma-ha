@@ -137,7 +137,7 @@ async def test_the_device_carries_its_serial_number(hass, free_port):
 
     assert device is not None
     assert device.serial_number == "005000"
-    assert device.manufacturer == "Moma"
+    assert device.manufacturer == "Smart-E-Grid"
 
 
 async def test_two_devices_get_their_own_prefix(hass, free_port):

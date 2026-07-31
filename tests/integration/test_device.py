@@ -50,7 +50,7 @@ async def test_describes_the_device_without_sensors(hass, free_port):
     device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "Moma005000")})
 
     assert (device.manufacturer, device.model, device.serial_number) == (
-        "Moma",
+        "Smart-E-Grid",
         "Moma",
         "005000",
     )
