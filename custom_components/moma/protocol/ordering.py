@@ -76,3 +76,12 @@ class SequenceTracker:
         """Aantal pakketten dat voor dit apparaat ontbrak in de reeks."""
         known = self._devices.get(name)
         return known.lost if known else 0
+
+    def forget(self, name: str) -> None:
+        """Vergeet de laatst geziene positie van dit apparaat.
+
+        Zonder dit zou een apparaat dat na verwijderen terugkomt zijn oude
+        `sequence` tegenkomen, en meldt het eerste pakket een gat van honderden
+        pakketten dat er nooit was.
+        """
+        self._devices.pop(name, None)

@@ -105,6 +105,16 @@ class MomaRuntime:
 
         await self._store.async_save({"active": self.tracker.activation_state()})
 
+    async def async_forget_device(self, device: str) -> None:
+        """Vergeet een apparaat en leg dat meteen vast.
+
+        Meteen bewaren in plaats van met `async_delay_save`: verwijderen is een
+        handeling van de gebruiker, en die mag niet ongedaan gemaakt worden door
+        een herstart binnen het uitstelvenster.
+        """
+        self.tracker.forget(device)
+        await self._store.async_save({"active": self.tracker.activation_state()})
+
     @callback
     def handle_packet(self, payload: bytes, source: str) -> None:
         """Verwerk één datagram. Wordt door de listener in de event loop geroepen."""

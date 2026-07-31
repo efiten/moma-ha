@@ -127,3 +127,44 @@ def test_ignored_fields_can_be_configured():
     activation = FieldActivation(ignored={"grid_power_w"})
 
     assert activation.observe(message(grid_power_w=2300)) == []
+
+
+def test_forgetting_a_device_drops_its_fields():
+    # Nodig om een apparaat uit Home Assistant te kunnen verwijderen: blijft de
+    # activeringsstatus staan, dan komen de sensoren bij het eerstvolgende
+    # pakket meteen terug en lijkt de verwijderknop stuk.
+    activation = FieldActivation()
+    activation.observe(message(name="Moma005000", grid_power_w=2300))
+
+    activation.forget("Moma005000")
+
+    assert activation.state() == {}
+
+
+def test_forgetting_leaves_other_devices_alone():
+    activation = FieldActivation()
+    activation.observe(message(name="Moma005000", grid_power_w=2300))
+    activation.observe(message(name="Moma005001", battery_soc=72))
+
+    activation.forget("Moma005000")
+
+    assert sorted(activation.state()) == ["Moma005001"]
+
+
+def test_forgetting_an_unknown_device_is_harmless():
+    # De aanroeper weet niet zeker of dit apparaat ooit een veld activeerde.
+    activation = FieldActivation()
+
+    activation.forget("Moma005000")
+
+    assert activation.state() == {}
+
+
+def test_a_forgotten_device_can_activate_again():
+    activation = FieldActivation()
+    activation.observe(message(name="Moma005000", grid_power_w=2300))
+    activation.forget("Moma005000")
+
+    opnieuw = activation.observe(message(name="Moma005000", grid_power_w=2300))
+
+    assert opnieuw == ["grid_power_w"]

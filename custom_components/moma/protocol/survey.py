@@ -61,6 +61,19 @@ class ProtocolSurvey:
         for name, value in message.fields.items():
             per_type.setdefault(name, _FieldObservation()).add(value)
 
+    def forget(self, name: str) -> None:
+        """Haal dit apparaat uit de inventaris.
+
+        Niet alleen voor de netheid: diagnostics redigeert apparaatnamen op basis
+        van wat de tracker kent. Bleef een verwijderd apparaat hier staan, dan
+        verscheen zijn serienummer ongeredigeerd in `summary["devices"]`.
+
+        De veldwaarnemingen zijn per berichttype en niet per apparaat, dus daar
+        valt niets te scheiden. `packets` blijft ook staan: dat is het aantal
+        verwerkte datagrammen en niet iets van één apparaat.
+        """
+        self.devices.discard(name)
+
     def summary(self) -> dict[str, Any]:
         return {
             "packets": self.packets,

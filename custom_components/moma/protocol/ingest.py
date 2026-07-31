@@ -67,6 +67,12 @@ class PacketIngest:
             activated_fields=tuple(self._activation.observe(message)),
         )
 
+    def forget(self, name: str) -> None:
+        """Wis alle toestand van dit apparaat, in alle drie de onderdelen."""
+        self._tracker.forget(name)
+        self._survey.forget(name)
+        self._activation.forget(name)
+
     def summary(self) -> dict[str, Any]:
         summary = self._survey.summary()
         summary["rejected_packets"] = self._rejected
