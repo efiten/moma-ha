@@ -1,7 +1,9 @@
 {
   "domain": "moma",
-  "name": "Smart-E-Grid Moma",
-  "codeowners": ["@efiten"],
+  "name": "Smart-E-Grid MoMa",
+  "codeowners": [
+    "@efiten"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/efiten/moma-ha",
   "integration_type": "hub",

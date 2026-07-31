@@ -166,3 +166,17 @@ async def test_a_power_sensor_is_a_measurement(hass, free_port):
 
     state = hass.states.get("sensor.testdevice01_grid_power_w")
     assert state.attributes["state_class"] == SensorStateClass.MEASUREMENT
+
+
+async def test_the_unique_id_keeps_the_broadcast_spelling(hass, free_port):
+    # De weergavenaam werd MoMa; de unique_id mag dat niet volgen. Zou hij dat
+    # wel doen, dan maakt Home Assistant nieuwe entiteiten aan en blijven de
+    # oude achter met alle opgebouwde historie eraan vast.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="Moma005000", grid_power_w=2300))
+
+    entities = er.async_get(hass)
+    entity = entities.async_get("sensor.moma005000_grid_power_w")
+
+    assert entity is not None
+    assert entity.unique_id == "Moma005000_grid_power_w"

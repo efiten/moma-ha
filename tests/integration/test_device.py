@@ -51,7 +51,7 @@ async def test_describes_the_device_without_sensors(hass, free_port):
 
     assert (device.manufacturer, device.model, device.serial_number) == (
         "Smart-E-Grid",
-        "Moma",
+        "MoMa",
         "005000",
     )
 
@@ -182,3 +182,37 @@ async def test_a_returning_device_gets_its_sensors_back(hass, free_port):
     await feed(hass, entry, make_packet(sequence=2, name="Moma005000", grid_power_w=2300))
 
     assert hass.states.get("sensor.moma005000_grid_power_w") is not None
+
+
+async def test_shows_the_product_name_as_the_vendor_writes_it(hass, free_port):
+    # Het apparaat broadcast `Moma001539`; de fabrikant schrijft MoMa.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="Moma005000", **ALLE_VELDEN_NUL))
+
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "Moma005000")})
+
+    assert device.name == "MoMa005000"
+
+
+async def test_the_identity_keeps_the_broadcast_spelling(hass, free_port):
+    # Dit is waar het misgaat als iemand de weergavenaam en de identiteit door
+    # elkaar haalt: de identifiers zijn de sleutel waar het device en de
+    # unique_id van zijn entiteiten aan hangen. Verandert daar een letter, dan
+    # ontstaat er een tweede device en raken alle entiteiten hun historie kwijt.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="Moma005000", **ALLE_VELDEN_NUL))
+
+    registry = dr.async_get(hass)
+
+    assert registry.async_get_device(identifiers={(DOMAIN, "Moma005000")}) is not None
+    assert registry.async_get_device(identifiers={(DOMAIN, "MoMa005000")}) is None
+
+
+async def test_a_name_without_the_known_prefix_is_left_alone(hass, free_port):
+    # Dat kan een firmwarevariant zijn, en er is geen reden om te gokken.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="TESTDEVICE01", **ALLE_VELDEN_NUL))
+
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "TESTDEVICE01")})
+
+    assert device.name == "TESTDEVICE01"

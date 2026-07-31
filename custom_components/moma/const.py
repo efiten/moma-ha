@@ -14,10 +14,16 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 MANUFACTURER = "Smart-E-Grid"
 
-# Het model is óók het voorvoegsel van de apparaatnaam: `Moma001539` levert
-# serienummer `001539`. Wijzig dit dus niet los van `device.py`, want daar wordt
-# het serienummer eruit gehaald met `removeprefix(MODEL)`.
-MODEL = "Moma"
+# Hoe het product geschreven wordt in de documentatie van de fabrikant, en dus
+# in alles wat de gebruiker te zien krijgt.
+MODEL = "MoMa"
+
+# Hoe het apparaat zichzélf noemt in de broadcast: `Moma001539`. Bewust los van
+# MODEL, want dit is geen weergave maar identiteit -- het staat in `unique_id`
+# en in de `identifiers` van het device, en daar mag geen letter aan veranderen
+# zonder dat bestaande entiteiten losraken van hun historie. Het serienummer
+# wordt hier ook achter weggehaald.
+NAME_PREFIX = "Moma"
 
 # Na zoveel seconden zonder pakket gelden de entiteiten als niet beschikbaar.
 # Bij een interval van vijf seconden zijn dat twaalf gemiste pakketten, dus
