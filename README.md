@@ -1,220 +1,104 @@
-# moma-ha
+# MoMa voor Home Assistant
 
-Home Assistant-integratie voor apparaten die het **moma**-protocol via UDP
-broadcasten — energiedata (vermogen, SOC, frequentie) van onder meer een
-laadpaal. De MoMa is een product van **Smart-E-Grid**.
+[![HACS: custom repository](https://img.shields.io/badge/HACS-custom%20repository-41BDF5.svg)](https://hacs.xyz)
+[![Home Assistant 2025.1+](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-41BDF5.svg)](https://www.home-assistant.io)
+[![Licentie: MIT](https://img.shields.io/badge/licentie-MIT-blue.svg)](LICENSE)
 
-De integratie heet *Smart-E-Grid MoMa* in de interface. Het domein blijft
-`moma`: dat zit in elke `entity_id` en `unique_id`, en wijzigen zou bij bestaande
-installaties de opgebouwde historie afbreken.
+Home Assistant-integratie voor de **MoMa** van
+[Smart-E-Grid](https://smartegrid.be) — vermogen, batterijlading en
+netfrequentie, rechtstreeks uit je eigen netwerk.
 
-> **Status: werkend, getest tegen een actief apparaat.** Installatie via HACS,
-> apparaatontdekking, sensoren, beschikbaarheid en herstart-persistentie zijn op
-> een echte Home Assistant OS-installatie nagelopen. De tekenconventie van de
-> vermogensvelden is bekend: negatief is injectie op het net en ontladen van de
-> batterij, positief is verbruik en laden.
->
-> Nog niet uitgezocht: koppeling met het Energy dashboard. Het apparaat stuurt
-> geen kWh-tellers, dus daarvoor moeten waarden afgeleid worden — zie
-> [`docs/protocol.md`](docs/protocol.md).
+Er valt niets in te stellen. De MoMa maakt zichzelf bekend op je netwerk, dus je
+hoeft geen IP-adres op te zoeken, geen wachtwoord in te vullen en geen account
+aan te maken. Er gaat ook niets naar buiten: alles blijft lokaal.
 
-## De recorder
+## Installeren
 
-> **Niet nodig om de integratie te gebruiken.** Dit is een ontwikkelharnas voor
-> protocolonderzoek. In normaal gebruik ontvangt de integratie de broadcast zelf,
-> en levert de knop **Download diagnostics** op de device-pagina de laatste ruwe
-> payloads met het serienummer geredigeerd. Laat de recorder niet permanent
-> meelopen: hij claimt dezelfde poort als de integratie.
+Twee knoppen. De eerste voegt deze integratie toe aan HACS, de tweede stelt hem
+in.
 
-Het apparaat is pas na 1 augustus 2026 volledig actief. Tot dan verzamelt de
-recorder wat er langskomt, zodat het datamodel op echte data gebaseerd wordt in
-plaats van op een capture waarin alles op nul stond.
+[![Open je Home Assistant en voeg deze repository toe aan HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=moma-ha&owner=efiten&category=Integration)
 
-Snel meekijken vanaf de Home Assistant-host, via de *Advanced SSH & Web
-Terminal*-add-on (die heeft `python3` al aan boord):
+Klik **Download**, en **herstart Home Assistant**. Dan:
 
-```sh
-python3 tools/moma_record.py listen --out /share/moma/capture.jsonl
-```
+[![Open je Home Assistant en begin met het instellen van een nieuwe integratie.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=moma)
 
-Voor een opname die dagen onbewaakt draait, zie
-[`addon/moma-recorder/`](addon/moma-recorder/README.md).
+De poort staat voorgevuld op 8484 — laat die staan tenzij je weet dat hij
+gewijzigd is. Je apparaat verschijnt binnen ongeveer vijf seconden.
 
-Een opname samenvatten — welke apparaten, berichttypes en velden erin zaten,
-met het waargenomen bereik per veld:
+> De knoppen vragen één keer het adres van jouw Home Assistant. Werken ze niet,
+> gebruik dan de handmatige stappen hieronder.
 
-```sh
-python3 tools/moma_record.py summary /share/moma/capture.jsonl
-```
+<details>
+<summary><b>Handmatig installeren</b></summary>
 
-## Installeren via HACS
+**Via HACS.** HACS → ⋮ rechtsboven → *Custom repositories* → URL
+`https://github.com/efiten/moma-ha`, categorie **Integration** → *Add*. Zoek
+daarna *Smart-E-Grid MoMa*, klik **Download** en herstart Home Assistant.
 
-HACS → ⋮ → **Custom repositories** → `https://github.com/efiten/moma-ha`,
-categorie **Integration**. Installeren, Home Assistant herstarten, dan
-Settings → Devices & Services → **Add integration** → *Smart-E-Grid MoMa*.
+**Zonder HACS.** Kopieer de map `custom_components/moma/` uit deze repository
+naar de map `custom_components/` in je Home Assistant-configuratie, en herstart.
 
-De poort staat voorgevuld op 8484. Er is niets anders te configureren: de
-apparaatidentiteit komt uit de broadcast, dus geen IP-adres en geen naam.
-Apparaten verschijnen binnen één interval — ongeveer vijf seconden.
+**Instellen.** Settings → Devices & Services → **Add integration** →
+*Smart-E-Grid MoMa*.
 
-### Zet "alle velden tonen" aan tijdens het testen
+</details>
 
-Normaal wordt een veld pas een sensor zodra het één keer een waarde anders dan
-nul meldt. Bij een inactief apparaat staat alles op nul, en dan krijg je een
-device **zonder sensoren** — dat lijkt kapot terwijl het correct is.
+## Wat je krijgt
 
-Zet daarom bij een testinstallatie de optie **Alle velden tonen** aan
-(Devices & Services → Smart-E-Grid MoMa → Configure). Zodra het apparaat echt
-draait kan die weer uit; sensoren die al bestaan verdwijnen niet.
+Eén apparaat per MoMa, met een sensor per meetwaarde:
 
-### Versies
-
-Er zijn bewust nog **geen releases**. HACS volgt dan de `main`-branch, zodat een
-`git push` direct beschikbaar is. Zodra er één release bestaat biedt HACS die
-aan en moet je expliciet *main* kiezen om nieuwere code te krijgen — tijdens
-ontwikkelen is dat een valkuil.
-
-Het versienummer in `custom_components/moma/manifest.json` is wat HACS toont. Een
-release-workflow weigert een release waarvan de git-tag daarvan afwijkt.
-
-### Het icoon
-
-De integratie levert zijn eigen icoon mee, in
-`custom_components/moma/brand/`. Sinds **Home Assistant 2026.3** hebben lokale
-merkafbeeldingen voorrang op de [brands-CDN](https://brands.home-assistant.io);
-Home Assistant biedt ze aan op `/api/brands/integration/moma/icon.png`.
-
-Twee bestanden volstaan: `icon.png` (256×256) en `icon@2x.png` (512×512). Er is
-bewust géén `logo.png` — ontbreekt die, dan serveert Home Assistant het icoon,
-en de zwarte merknaam zou op een donker thema onleesbaar worden.
-
-Op Home Assistant ouder dan 2026.3 werkt dit niet en blijft de integratiepagina
-een grijs vakje tonen. Daarvoor zou een PR naar
-[`home-assistant/brands`](https://github.com/home-assistant/brands) nodig zijn,
-waar de map `custom_integrations/` voor bestaat — inmiddels als legacy aangemerkt,
-juist omdat deze route hem vervangt.
-
-## Problemen opsporen
-
-**Er is geen logbestand meer.** Op Home Assistant OS schrijft Core sinds 2026
-geen `/config/home-assistant.log`; alles gaat naar journald. Lees mee via
-*Settings → System → Logs*, of via de Supervisor.
-
-Uitgebreide logging aanzetten zonder herstart — *Developer tools → Actions*:
-
-```yaml
-action: logger.set_level
-data:
-  custom_components.moma: debug
-```
-
-Permanent, in `configuration.yaml`:
-
-```yaml
-logger:
-  logs:
-    custom_components.moma: debug
-```
-
-**Waarschuwingen en fouten** verschijnen ook zonder debug-niveau in het
-systeemlogboek. Blijft het daar stil terwijl er niets gebeurt, dan komt er
-waarschijnlijk niets binnen op de poort.
-
-**Wat de integratie werkelijk ontvangen heeft** staat in de
-knop *Download diagnostics* op de integratiepagina: een samenvatting per veld
-met het waargenomen bereik, de tellers voor verworpen, verlate en verloren
-pakketten, en de laatste ruwe payloads. Serienummer en bronadres zijn
-geredigeerd, dus dat bestand kan in een issue.
-
-## Ontwikkelen
-
-De testsuite is gesplitst langs de laaggrens.
-
-**Laag 1** (`tests/protocol/`) heeft Home Assistant niet nodig en draait overal,
-ook op Windows:
-
-```sh
-python -m venv .venv
-.venv/Scripts/python -m pip install pytest pytest-asyncio
-.venv/Scripts/python -m pytest tests/protocol
-```
-
-`pyproject.toml` zet `custom_components/moma` op het pad zodat deze tests
-`protocol.*` rechtstreeks importeren, buiten `custom_components/moma/__init__.py`
-om — dat bestand importeert homeassistant en zou die onafhankelijkheid breken.
-
-**Laag 2** (`tests/integration/`) heeft Home Assistant nodig, en dat testharnas
-is Unix-only: het importeert `fcntl`. Op Windows draait dit dus via WSL:
-
-```sh
-wsl -- bash scripts/test.sh -q
-```
-
-> Installeer `pytest-homeassistant-custom-component` **niet** in een
-> Windows-venv. pytest laadt die plugin automatisch, waarna zelfs de
-> laag-1-tests omvallen op `fcntl`.
-
-Eenmalig in WSL, omdat Ubuntu `venv` niet standaard meelevert:
-
-```sh
-sudo apt install -y python3.14-venv
-```
-
-CI draait beide lagen als aparte jobs. De laag-1-job installeert Home Assistant
-bewust niet, zodat hij omvalt als er ooit een HA-import in laag 1 sluipt.
-
-## Doel
-
-Een generieke, installeerbare integratie die zonder configuratie meerdere
-moma-apparaten op hetzelfde netwerk herkent en als Home Assistant-devices
-aanbiedt, inclusief koppeling met het Energy dashboard. Uiteindelijk te
-distribueren via HACS.
-
-## Opzet
-
-De integratie splitst strikt in twee lagen:
-
-| Laag | Locatie | Verantwoordelijkheid |
+| Sensor | Eenheid | Betekenis |
 |---|---|---|
-| 1 — transport & protocol | `custom_components/moma/protocol/` | UDP-socket, parsen, valideren, volgorde bewaken. **Geen Home Assistant-imports**, volledig testbaar met bytestrings. |
-| 2 — Home Assistant | `custom_components/moma/` | Config flow, devices, entities, availability. |
+| Grid power | W | Uitwisseling met het net — **positief is verbruik, negatief is injectie** |
+| Home power | W | Wat het huis verbruikt |
+| PV power | W | Wat de zonnepanelen opwekken |
+| Battery power | W | **Positief is laden, negatief is ontladen** |
+| Battery SOC | % | Laadtoestand van de batterij |
+| Frequency | Hz | Netfrequentie |
 
-Laag 1 staat bewust *binnen* de integratiemap: HACS distribueert alleen
-`custom_components/moma/`, dus een zustermap op repo-niveau zou nooit bij de
-gebruiker terechtkomen. `tools/` en `tests/` importeren hem vanaf de repo-root
-als `custom_components.moma.protocol`.
+Krijgt je MoMa er later velden bij via een firmware-update, dan verschijnen die
+vanzelf als sensor. Daar is geen nieuwe versie van deze integratie voor nodig.
 
-## Mappen
+## Er verschijnt geen apparaat, of geen sensoren
 
-```
-custom_components/moma/   de integratie (het enige dat HACS uitlevert)
-tools/                    standalone recorder, draait op de HA-host
-addon/moma-recorder/      lokale Home Assistant-add-on als ontwikkelharnas
-tests/                    pytest, draait tegen fixtures
-fixtures/                 geanonimiseerd capture-corpus
-docs/                     protocolonderzoek en ontwerpdocumenten
-```
+**Geen sensoren, maar wel een apparaat.** Dat is normaal bij een installatie die
+nog niets doet. Een meetwaarde wordt pas een sensor zodra hij één keer iets
+anders dan nul meldt — anders zou je vol staan met sensoren voor hardware die je
+niet hebt. Je ziet hierover ook een melding bij *Instellingen → Reparaties*. Het
+lost zichzelf op zodra de installatie gaat meten.
 
-`addon/moma-recorder/` is géén Supervisor-add-onrepository. Het is een
-ontwikkelharnas dat je naar `/addons/` op de HA-machine kopieert.
+Wil je ze nu al zien: Devices & Services → **Smart-E-Grid MoMa** → *Configure* →
+**Alle velden tonen**. Sensoren die zo ontstaan verdwijnen niet meer als je die
+optie later weer uitzet.
 
-## Data en privacy
+**Helemaal geen apparaat.** Dan komt de aankondiging van de MoMa niet aan bij
+Home Assistant. Meestal is dat het netwerk:
 
-Ruwe captures bevatten huishoudelijke telemetrie en horen **niet** in git —
-`captures/` staat in `.gitignore`. Alleen handmatig geanonimiseerde monsters
-gaan naar `fixtures/`: serienummers vervangen, timestamps genormaliseerd.
+- Home Assistant moet in **hetzelfde netwerk** zitten als de MoMa. De
+  aankondiging is een broadcast en komt niet door een router heen.
+- Draait Home Assistant in Docker, dan moet dat met `--network host`. Op een
+  bridge-netwerk komen broadcasts niet binnen.
+- Een gastnetwerk of VLAN-scheiding tussen beide houdt het verkeer tegen.
 
-Deze repo is privé maar wordt later publiek gezet. De volledige git-historie
-wordt dan mee zichtbaar; er is geen tweede kans om dit recht te zetten.
+**Alles onbeschikbaar geworden.** Na een minuut zonder bericht meldt de
+integratie de sensoren als niet beschikbaar. Ze komen vanzelf terug zodra de
+MoMa weer iets stuurt.
 
-## Documentatie
+**Melden van een probleem.** Op de pagina van de integratie zit de knop
+**Download diagnostics**. Dat bestand beschrijft precies wat er binnenkwam, met
+het serienummer en het IP-adres eruit gehaald, dus het kan zo in een
+[issue](https://github.com/efiten/moma-ha/issues).
 
-- [`docs/protocol.md`](docs/protocol.md) — het moma-protocol zoals waargenomen
-- [`docs/ontwerpbeslissingen.md`](docs/ontwerpbeslissingen.md) — de genomen
-  beslissingen, met hun reden
-- [`docs/veldnaamconventie.md`](docs/veldnaamconventie.md) — welke veldnamen de
-  integratie automatisch juist weergeeft; bedoeld om te delen met de
-  ontwikkelaars van het apparaat
+## Meer lezen
+
+- [`docs/ontwikkelen.md`](docs/ontwikkelen.md) — meewerken aan deze integratie:
+  opzet, tests, en het opnamegereedschap
+- [`docs/protocol.md`](docs/protocol.md) — hoe de MoMa zich aankondigt
+- [`docs/ontwerpbeslissingen.md`](docs/ontwerpbeslissingen.md) — de gemaakte
+  keuzes, met hun reden
+- [`docs/veldnaamconventie.md`](docs/veldnaamconventie.md) — voor de
+  ontwikkelaars van het apparaat: welke veldnamen vanzelf goed weergegeven worden
 
 ## Licentie
 
