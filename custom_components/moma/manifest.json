@@ -1,6 +1,6 @@
 {
   "domain": "moma",
-  "name": "Moma",
+  "name": "Smart-E-Grid Moma",
   "codeowners": ["@efiten"],
   "config_flow": true,
   "documentation": "https://github.com/efiten/moma-ha",

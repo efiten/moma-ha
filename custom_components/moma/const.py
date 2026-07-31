@@ -12,7 +12,11 @@ CONF_SHOW_ALL_FIELDS = "show_all_fields"
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
-MANUFACTURER = "Moma"
+MANUFACTURER = "Smart-E-Grid"
+
+# Het model is óók het voorvoegsel van de apparaatnaam: `Moma001539` levert
+# serienummer `001539`. Wijzig dit dus niet los van `device.py`, want daar wordt
+# het serienummer eruit gehaald met `removeprefix(MODEL)`.
 MODEL = "Moma"
 
 # Na zoveel seconden zonder pakket gelden de entiteiten als niet beschikbaar.
