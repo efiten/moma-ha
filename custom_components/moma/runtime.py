@@ -18,6 +18,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PORT
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
@@ -34,6 +35,7 @@ from .const import (
     STALL_TIMEOUT,
     STORAGE_VERSION,
 )
+from .device import device_details
 from .protocol.activation import FieldActivation
 from .protocol.devices import DeviceTracker
 from .protocol.listener import MomaListener, open_listener
@@ -118,6 +120,9 @@ class MomaRuntime:
         if update is None:
             return
 
+        if update.is_new_device:
+            self._async_register_device(update.device)
+
         if update.activated_fields:
             _LOGGER.debug(
                 "Nieuwe velden voor %s: %s", update.device, ", ".join(update.activated_fields)
@@ -130,6 +135,43 @@ class MomaRuntime:
         async_dispatcher_send(
             self.hass, f"{SIGNAL_DEVICE_UPDATE}_{self.entry.entry_id}_{update.device}"
         )
+
+    @callback
+    def _async_register_device(self, device: str) -> None:
+        """Zet het apparaat in het device-register zodra het zich meldt.
+
+        Los van de entiteiten, want die bestaan er misschien nog niet: een
+        apparaat waarvan elk veld op nul staat activeert geen veld, en dan zou
+        de integratiepagina helemaal leeg blijven. Met dit device staat er
+        "1 apparaat, 0 entiteiten" -- zichtbaar bewijs dat de broadcast
+        aankomt, waar anders alleen de reparatiemelding over te zeggen valt.
+
+        `async_get_or_create` is idempotent op `identifiers`, dus dit pad en het
+        `DeviceInfo` van de sensoren komen op hetzelfde device uit. Dat werkt
+        alleen zolang beide dezelfde beschrijving gebruiken; vandaar dat die uit
+        `device.py` komt en niet twee keer opgeschreven is.
+        """
+        dr.async_get(self.hass).async_get_or_create(
+            config_entry_id=self.entry.entry_id, **device_details(device)
+        )
+
+        actief = len(self.tracker.activation_state().get(device, ()))
+        if actief:
+            _LOGGER.info(
+                "Moma-apparaat %s gevonden op poort %s, %s velden met een waarde",
+                device,
+                self.port,
+                actief,
+            )
+        else:
+            # Het geval dat er van buiten uitziet als een kapotte installatie.
+            _LOGGER.info(
+                "Moma-apparaat %s gevonden op poort %s, maar elk veld staat op nul, "
+                "dus er komen nog geen sensoren. Dat lost zichzelf op zodra het "
+                "apparaat gaat meten; zet 'Alle velden tonen' aan om ze nu al te maken",
+                device,
+                self.port,
+            )
 
     @property
     def available(self) -> bool:
