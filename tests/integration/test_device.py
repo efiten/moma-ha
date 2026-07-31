@@ -114,9 +114,13 @@ async def test_allows_removing_a_device_that_no_longer_broadcasts(hass, free_por
 
 
 async def test_removing_a_device_forgets_its_activated_fields(hass, free_port):
-    # Na een herstart is de tracker leeg maar staat de activeringsstatus nog in
-    # de opslag. Bleef die na verwijderen staan, dan komen de sensoren bij een
-    # terugkomst meteen terug in plaats van pas na een echte meting.
+    # Bleef de activeringsstatus staan, dan komen de sensoren bij een terugkomst
+    # meteen terug in plaats van pas na een echte meting.
+    #
+    # De controle staat na het uitlopen van de reload die het verwijderen
+    # inplant. Dat is meteen het strengere bewijs: de runtime is dan opnieuw
+    # opgebouwd uit de opslag, dus dit toont aan dat het vergeten bewaard is en
+    # niet alleen in het geheugen gebeurde.
     entry = await setup_moma(hass, free_port)
     await feed(hass, entry, make_packet(name="Moma005000", grid_power_w=2300))
     await hass.config_entries.async_reload(entry.entry_id)
@@ -125,6 +129,7 @@ async def test_removing_a_device_forgets_its_activated_fields(hass, free_port):
     assert entry.runtime_data.tracker.activation_state() != {}
 
     await async_remove_config_entry_device(hass, entry, device)
+    await hass.async_block_till_done()
 
     assert entry.runtime_data.tracker.activation_state() == {}
 
