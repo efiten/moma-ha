@@ -66,6 +66,18 @@ class FieldActivation:
     def is_active(self, device: str, field: str) -> bool:
         return field in self._active.get(device, ())
 
+    def forget(self, device: str) -> None:
+        """Wis wat er over dit apparaat onthouden is.
+
+        Nodig om een apparaat uit Home Assistant te kunnen verwijderen. Bleef de
+        activeringsstatus staan, dan komen de sensoren bij het eerstvolgende
+        pakket meteen terug en lijkt de verwijderknop stuk.
+
+        Een onbekend apparaat vergeten mag: de aanroeper weet niet of dit
+        apparaat ooit een veld activeerde.
+        """
+        self._active.pop(device, None)
+
     def state(self) -> dict[str, list[str]]:
         """Momentopname om te bewaren tussen herstarts."""
         return {device: sorted(fields) for device, fields in self._active.items() if fields}

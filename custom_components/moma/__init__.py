@@ -13,6 +13,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.device_registry import DeviceEntry
 
 from .const import DOMAIN, ISSUE_ALL_FIELDS_ZERO, PLATFORMS
 from .runtime import MomaRuntime
@@ -50,6 +51,39 @@ async def async_unload_entry(hass: HomeAssistant, entry: MomaConfigEntry) -> boo
         await entry.runtime_data.async_stop()
 
     return unloaded
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: MomaConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    """Sta het verwijderen van een apparaat toe zolang het niet meer meldt.
+
+    Nodig omdat een device ontstaat zodra er één broadcast langskomt. Een
+    vervangen apparaat met een oud serienummer, of iets anders dat een keer op
+    poort 8484 verscheen, zou anders voor altijd als kaart blijven staan zonder
+    enige manier om het kwijt te raken.
+
+    Een apparaat dat wél broadcastet weigeren we. Het staat binnen vijf seconden
+    weer in het register, en dan lijkt de verwijderknop stuk. Alleen wat sinds
+    het opstarten geen pakket meer stuurde is werkelijk weg.
+
+    De activeringsstatus gaat mee: bleef die staan, dan komen de sensoren bij een
+    eventuele terugkomst meteen terug in plaats van pas na een echte meting.
+    """
+    runtime = entry.runtime_data
+    namen = {
+        identificatie
+        for domein, identificatie in device_entry.identifiers
+        if domein == DOMAIN
+    }
+
+    if namen & set(runtime.tracker.devices):
+        return False
+
+    for naam in namen:
+        await runtime.async_forget_device(naam)
+
+    return True
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: MomaConfigEntry) -> None:

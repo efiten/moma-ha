@@ -117,3 +117,57 @@ def test_values_for_an_unknown_device_is_empty():
     tracker = DeviceTracker()
 
     assert tracker.values_for("BESTAATNIET") == {}
+
+
+def test_forgetting_a_device_removes_it_everywhere():
+    # Toestand per apparaat zit op vier plekken: de laatste waarden, de
+    # activeringsstatus, de volgordebewaking en de inventaris. Blijft er ergens
+    # iets staan, dan is het apparaat niet echt weg.
+    tracker = DeviceTracker()
+    tracker.handle(packet(name="Moma005000", grid_power_w=2300))
+
+    tracker.forget("Moma005000")
+
+    samenvatting = tracker.summary()
+    assert tracker.devices == ()
+    assert tracker.values_for("Moma005000") == {}
+    assert tracker.activation_state() == {}
+    assert samenvatting["devices"] == []
+    assert samenvatting["lost_packets"] == {}
+
+
+def test_forgetting_keeps_the_other_device():
+    tracker = DeviceTracker()
+    tracker.handle(packet(name="Moma005000", grid_power_w=2300))
+    tracker.handle(packet(name="Moma005001", battery_soc=72))
+
+    tracker.forget("Moma005000")
+
+    assert tracker.devices == ("Moma005001",)
+    assert sorted(tracker.summary()["devices"]) == ["Moma005001"]
+
+
+def test_a_forgotten_device_that_returns_counts_as_new():
+    # Belangrijk voor de sensorlaag: die maakt entiteiten aan op basis van
+    # is_new_device. Zou het apparaat als bekend terugkomen, dan blijft het
+    # device na verwijderen onzichtbaar tot een herstart.
+    tracker = DeviceTracker()
+    tracker.handle(packet(name="Moma005000", grid_power_w=2300))
+    tracker.forget("Moma005000")
+
+    update = tracker.handle(packet(name="Moma005000", sequence=2, grid_power_w=2300))
+
+    assert update.is_new_device
+
+
+def test_a_forgotten_device_does_not_count_missed_packets():
+    # De volgordebewaking moet ook vergeten zijn: zou de oude sequence blijven
+    # staan, dan meldt het eerste pakket na de terugkomst een gat van honderden
+    # pakketten dat er nooit was.
+    tracker = DeviceTracker()
+    tracker.handle(packet(name="Moma005000", sequence=1, grid_power_w=2300))
+    tracker.forget("Moma005000")
+
+    tracker.handle(packet(name="Moma005000", sequence=900, grid_power_w=2300))
+
+    assert tracker.summary()["lost_packets"] == {"Moma005000": 0}

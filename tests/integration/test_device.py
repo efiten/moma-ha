@@ -9,7 +9,9 @@ van een broadcast die nooit aankwam.
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
+from custom_components.moma import async_remove_config_entry_device
 from custom_components.moma.const import DOMAIN
+from custom_components.moma.device import device_details
 
 from .conftest import feed, make_packet, setup_moma
 
@@ -86,3 +88,40 @@ async def test_survives_a_reload(hass, free_port):
     device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "Moma005000")})
 
     assert device is not None
+
+
+async def test_refuses_to_remove_a_device_that_still_broadcasts(hass, free_port):
+    # Toestaan zou een knop opleveren die niets doet: het apparaat staat binnen
+    # vijf seconden weer in het register.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="Moma005000", grid_power_w=2300))
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "Moma005000")})
+
+    assert await async_remove_config_entry_device(hass, entry, device) is False
+
+
+async def test_allows_removing_a_device_that_no_longer_broadcasts(hass, free_port):
+    # Zoals een vervangen apparaat met een oud serienummer: het staat nog in het
+    # register uit een eerdere sessie, maar stuurt niets meer.
+    entry = await setup_moma(hass, free_port)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, **device_details("Moma005000")
+    )
+
+    assert await async_remove_config_entry_device(hass, entry, device) is True
+
+
+async def test_removing_a_device_forgets_its_activated_fields(hass, free_port):
+    # Na een herstart is de tracker leeg maar staat de activeringsstatus nog in
+    # de opslag. Bleef die na verwijderen staan, dan komen de sensoren bij een
+    # terugkomst meteen terug in plaats van pas na een echte meting.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(name="Moma005000", grid_power_w=2300))
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "Moma005000")})
+    assert entry.runtime_data.tracker.activation_state() != {}
+
+    await async_remove_config_entry_device(hass, entry, device)
+
+    assert entry.runtime_data.tracker.activation_state() == {}

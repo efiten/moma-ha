@@ -70,6 +70,18 @@ class DeviceTracker:
     def values_for(self, device: str) -> Mapping[str, Any]:
         return dict(self._values.get(device, {}))
 
+    def forget(self, device: str) -> None:
+        """Vergeet dit apparaat volledig.
+
+        Toestand per apparaat zit op vier plekken -- de laatste waarden hier, en
+        de activeringsstatus, de volgordebewaking en de inventaris in de
+        ingestlaag. Blijft er ergens iets staan, dan is het apparaat niet echt
+        weg: het komt terug als bekend, of zijn naam verschijnt nog in
+        diagnostics.
+        """
+        self._values.pop(device, None)
+        self._ingest.forget(device)
+
     def activation_state(self) -> dict[str, list[str]]:
         """Momentopname om te bewaren tussen herstarts."""
         return self.activation.state()
