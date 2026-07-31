@@ -39,6 +39,28 @@ async def test_redacts_the_serial_number(hass, free_port):
     assert "Moma005000" not in json.dumps(report)
 
 
+async def test_redacts_the_source_address(hass, free_port):
+    # Het bronadres identificeert het apparaat op het netwerk van de gebruiker.
+    # Het serienummer redigeren en dit laten staan zou het redigeren uithollen.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(grid_power_w=2300))
+
+    report = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert "127.0.0.1" not in json.dumps(report)
+
+
+async def test_keeps_the_source_port_readable(hass, free_port):
+    # De bronpoort is efemeer en verraadt niets, terwijl hij wel uitlegt waarom
+    # er niet op poortnummer gefilterd kan worden.
+    entry = await setup_moma(hass, free_port)
+    await feed(hass, entry, make_packet(grid_power_w=2300))
+
+    report = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert "41710" in json.dumps(report)
+
+
 async def test_keeps_the_measurements_readable(hass, free_port):
     # Redigeren mag de bruikbaarheid niet wegnemen; de velden zijn juist waar
     # het om gaat.
